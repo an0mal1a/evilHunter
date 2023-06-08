@@ -37,3 +37,8 @@ Git Hub:
         -  aircrack-ng
         -  aireplay-ng
         -  airodump-ng
+               
+# DICCIONARIO:
+    Actualmente, para que funcione teneis que especificar el diccionario con "-w"
+        
+    O por otra parte añadir "rockyou.txt" a la carpeta words
