@@ -14,7 +14,7 @@ Argumentos:
             (-h / --help)
 # INSTALACIÓN:
 
-PyPi:
+PyPi: (https://pypi.org/project/evilHunter/)
 
     command_line = pip install evilHunter
 
