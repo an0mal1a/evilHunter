@@ -4,14 +4,16 @@
 
 Argumentos:
     
-        ** Esta herramineta se puede ejecutar sin argumentos y usara el famoso 'rockyou' como diccionario **     
+        ** Esta herramineta se puede ejecutar sin argumentos y usa'top400.txt' como diccionario **     
 
 
     # OPTIONAL:
         
         [♦] evilHunter -w /path/to/wordlists
+        
             (-w / -wordlist)
-            (-h / --help)
+              (-h / --help)
+              
 # INSTALACIÓN:
 
 PyPi: (https://pypi.org/project/evilHunter/)
@@ -39,6 +41,8 @@ Git Hub:
         -  airodump-ng
                
 # DICCIONARIO:
-    Actualmente, para que funcione teneis que especificar el diccionario con "-w"
-        
-    O por otra parte añadir "rockyou.txt" a la carpeta words
+
+    Diccionario default "top400.txt"
+    RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
+    
+    Para especificar el diccionario con -w /path/to/dict
