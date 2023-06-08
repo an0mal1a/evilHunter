@@ -394,7 +394,7 @@ def capture_handshake(hand,  direc, args, deauth):
 def find_wordlists(wordlists):
     found = os.system("find %s > /dev/null" % wordlists)
     if found != 0:
-        return "words/rockyou.txt"
+        return "words/top400.txt"
     else:
         return wordlists
 
@@ -407,7 +407,7 @@ def crack_handshake(direc, args):
     if args.wordlist:
         wordlists = find_wordlists(args.wordlist)
     else:
-        wordlists = "words/rockyou.txt"
+        wordlists = "words/top400.txt"
 
     # Abrimos el capture_file donde se encuentra la ruta hacia  el .cap
     with open("espec/capture_file", "r") as file:
