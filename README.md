@@ -37,10 +37,11 @@ Git Hub:
         -  aireplay-ng
         -  airodump-ng
                
-# DICCIONARIO:
+# DICCIONARIO: 
+RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
 
     Diccionario default "top400.txt"
     
-    RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
+    
     
     Para especificar el diccionario con -w /path/to/dict
