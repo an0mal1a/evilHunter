@@ -10,10 +10,8 @@ try:
     import re
     import subprocess
     import threading
-    import pprint
     import multiprocessing
     import os
-    import signal
     import argparse
     time.sleep(1)
     print(Fore.GREEN + "\n\t[*] " + Fore.YELLOW + "Librerias importadas correctamente...")
@@ -54,8 +52,8 @@ def exiting(err):
 
 
     try:
-        if os.system("airmon-ng stop {}mon > /dev/null".format(choosed_interface)) != 0:
-            os.system("airmon-ng stop {} > /dev/null".format(choosed_interface))
+        if os.system("airmon-ng stop {}mon ".format(choosed_interface)) != 0:
+            os.system("airmon-ng stop {}".format(choosed_interface))
     except NameError:
         pass
 
@@ -384,7 +382,7 @@ def capture_handshake(hand,  direc, args, deauth):
 
     print(Fore.LIGHTCYAN_EX + "\n\n\n\n\n\n\n\n\n\n\n\n[T] " + Fore.YELLOW + "Comprobando captura de hanshake")
     if done:
-        print(Fore.LIGHTYELLOW_EX + "\n\t[V] " + Fore.CYAN + "Handskake capturado...")
+        print(Fore.LIGHTYELLOW_EX + "\n\t[V] " + Fore.CYAN + "Handskake capturado...\n\n")
     else:
         print(Fore.RED + "\n\t[T] " + Fore.YELLOW + "Hanshake no capturado...")
         exiting(err=True)
@@ -392,22 +390,21 @@ def capture_handshake(hand,  direc, args, deauth):
 
 
 def find_wordlists(wordlists):
-    found = os.system("find %s > /dev/null" % wordlists)
-    if found != 0:
-        return "words/top400.txt"
-    else:
-        return wordlists
+    found = os.system("find {}  > /dev/null".format(wordlists))
+    while found != 0:
+        print(Fore.YELLOW + "[!] " + Fore.RED + "Diccionario no encontrado, introduzca la ruta completa...")
+        wordlists = input(Fore.YELLOW + "\n\t[!>] " + Fore.WHITE)
+        found = os.system("find {}  > /dev/null".format(wordlists))
+
+    return wordlists
 
 
 def crack_handshake(direc, args):
     # Buscamos arhchivo .cap
-    os.system("find {}/*.cap > espec/capture_file".format(direc))
+    os.system("find {}/*.cap > espec/capture_file ".format(direc))
 
-    # Comprobamos si nos ha pasasdo discionario y si existe en su suste,ma
-    if args.wordlist:
-        wordlists = find_wordlists(args.wordlist)
-    else:
-        wordlists = "words/top400.txt"
+    # Comprobamos si nos ha pasasdo discionario y si existe en su sistema
+    wordlist = find_wordlists(args.wordlist)
 
     # Abrimos el capture_file donde se encuentra la ruta hacia  el .cap
     with open("espec/capture_file", "r") as file:
@@ -418,7 +415,7 @@ def crack_handshake(direc, args):
     time.sleep(3)
 
     # Empezamos con el crack de la password
-    crack = subprocess.Popen(["aircrack-ng", file, "-w", wordlists], stdout=subprocess.PIPE)
+    crack = subprocess.Popen(["aircrack-ng", file, "-w", wordlist], stdout=subprocess.PIPE)
 
     # Mostramos la salida hasta que se encuentre la contraseña (o no)
     while True:
@@ -435,7 +432,7 @@ def main():
     try:
         # Recogemos argumentos
         parser = argparse.ArgumentParser()
-        parser.add_argument("-w", "--wordlist", help="Use an extern wordlists dictionary", required=False)
+        parser.add_argument("-w", "--wordlist", help="Use an extern wordlists dictionary", required=True)
         args = parser.parse_args()
 
         # Somos root?
