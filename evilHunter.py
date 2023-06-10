@@ -1,5 +1,4 @@
 #!/bin/python3
-import pywifi as pywifi
 
 try:
     print("\n[*] Starting...")
