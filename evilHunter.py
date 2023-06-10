@@ -423,8 +423,6 @@ def crack_handshake(direc, args, file):
 
 def main():
     try:
-        delete_files()
-        exit()
         # Recogemos argumentos
         parser = argparse.ArgumentParser()
         parser.add_argument("-w", "--wordlist", help="Use an extern wordlists dictionary", required=True)
