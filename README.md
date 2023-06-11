@@ -6,10 +6,18 @@ Argumentos:
     
     OBLIGATORIO
         
-        [♦] evilHunter -w /path/to/wordlists
+        [♦] evilHunter [-w /path/to/wordlists] [-b 12 (passwd length)] [-t 400 (Nº of threads)]
         
-            (-w / -wordlist)
-              (-h / --help)
+            (-w / --wordlist)
+                [♦] -w /path/to/wordlists
+
+            (-b / --brute)
+                [♦] -b passwd_length
+
+            (-t / --threads)
+                [♦] -t Nº_of_threads
+
+            (-h / --help)
               
 # INSTALACIÓN:
 
@@ -62,6 +70,6 @@ RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
     4. Una véz capturado el handshake, abrimos el archivo .cap y
         con diccionary attack crackeamos la contraseña.
 
-# _Proximamente_:
+# _Proximas mejoras_
 
-                [♦]  Brute Force Crack
+                [♦]  Brute Force (Password Generator) Faster

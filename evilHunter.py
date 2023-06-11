@@ -1,4 +1,5 @@
 #!/bin/python3
+import string
 
 try:
     print("\n[*] Starting...")
@@ -13,8 +14,9 @@ try:
     import multiprocessing
     import os
     import argparse
+    import evilCracker
     time.sleep(1)
-    print(Fore.GREEN + "\n\t[*] " + Fore.YELLOW + "Librerias importadas correctamente...")
+    print(Fore.GREEN + "\n[*] " + Fore.YELLOW + "Librerias importadas correctamente...\n" + Fore.RESET)
 
 except ModuleNotFoundError as e:
     print("\n\n[!] Faltan modulos necesario para la ejecucion...\n\t%s" % e)
@@ -24,13 +26,18 @@ except ModuleNotFoundError as e:
 # Solicionar <lenght:
 
 def delete_files():
-    os.system('find captures -type f ! -name "*.cap" -delete')
+    os.system('find captures -type f ! -name "*.cap" -delete > /dev/null')
+    os.system('rm espec/*')
 
 
 def restart_net():
     os.system("service networking restart > /dev/null")
     os.system("service NetworkManager restart > /dev/null")
-# COMPROBAR SI EL ARGUMENTO -w FUNCIONA Y SE COMPRUEBA
+
+
+def stop_monitoring():
+    if os.system("airmon-ng stop {}mon > /dev/null".format(choosed_interface)) != 0:
+        os.system("airmon-ng stop {} > /dev/null".format(choosed_interface))
 
 
 def exiting(err):
@@ -51,8 +58,7 @@ def exiting(err):
                         Fore.LIGHTCYAN_EX + "Stopping monitor mode..." + Fore.RESET)
 
     try:
-        if os.system("airmon-ng stop {}mon > /dev/null".format(choosed_interface)) != 0:
-            os.system("airmon-ng stop {} > /dev/null".format(choosed_interface))
+        stop_monitoring()
     except NameError:
         pass
 
@@ -262,7 +268,7 @@ def process_data(all_got, args):
                 obetives.append(itera)
 
         info = "  ".join(obetives)
-
+        n_d = 0
         if re.findall("-[0-9]+", info):
             encription = re.findall("WPA[0-9]  [A-Z]+  +[A-Z]+", info)
 
@@ -271,6 +277,10 @@ def process_data(all_got, args):
 
             channel = info.split()[info.split().index("WPA2") - 2]
             name = info.split()[info.split().index("WPA2") + 3]
+
+            if re.findall("^(<length:*)", name):
+                name = f"N/D_{n_d}"
+                n_d += 1
 
             dict[name] = {"bssid": bssid,
                           "encription_type": encription[0],
@@ -326,7 +336,7 @@ def prepare_attack(dict, network_to_attack, args):
                                                     "Enter the name of the file to save [E.j capture1] > ")
 
         if os.system("find captures/{}/{}* 2>/dev/null 1>/dev/null".format(network_to_attack, file)) == 0:
-            print(Fore.RED + "\n\t[!] " + Fore.YELLOW + "Este nombre ya esta usado por algún archivo.")
+            print(Fore.RED + "\n\t\t[!] " + Fore.YELLOW + "Este nombre ya esta usado por algún archivo.")
             file = None
 
 
@@ -344,7 +354,6 @@ def prepare_attack(dict, network_to_attack, args):
           Fore.YELLOW + "ESPERE... --->  " + Fore.LIGHTCYAN_EX + "[CTRL + C] to stop manually..." + Fore.RESET)
 
     input(Fore.YELLOW + "\n\t\t[ENTER] To continue\n")
-
 
     capture = multiprocessing.Process(target=capture_handshake(direc, args, bssid, ch, file, network_to_attack))
 
@@ -395,12 +404,20 @@ def crack_handshake(direc, args, file):
     # Buscamos arhchivo .cap
     os.system("find {}/{}*.cap > espec/capture_file ".format(direc, file))
 
-    # Comprobamos si nos ha pasasdo discionario y si existe en su sistema
-    wordlist = find_wordlists(args.wordlist)
-
     # Abrimos el capture_file donde se encuentra la ruta hacia  el .cap
     with open("espec/capture_file", "r") as file:
         file = file.read().strip()
+
+    # Comprobamos si nos ha pasasdo discionario y si existe en su sistema o si quiere brute
+    if args.wordlist:
+        wordlist = find_wordlists(args.wordlist)
+
+    elif args.brute:
+        if args.threads:
+            evilCracker.startbrute(file, args.brute, args.threads)
+        else:
+            evilCracker.startbrute(file, args.brute, 200)
+        exiting(err="done")
 
     print(Fore.YELLOW + "\n\t[!] " + Fore.LIGHTCYAN_EX + "Abriendo archivo '.cap'\n" + Fore.RESET)
     # input(Fore.LIGHTCYAN_EX + "\n[ENTER] " + Fore.YELLOW + "To continue\n\n" + Fore.RESET)
@@ -424,8 +441,43 @@ def main():
     try:
         # Recogemos argumentos
         parser = argparse.ArgumentParser()
-        parser.add_argument("-w", "--wordlist", help="Use an extern wordlists dictionary", required=True)
+        parser.add_argument("-w", "--wordlist", help="Set diccionary attack, specify an extern wordlists dictionary  USAGE:  -w /path/to/dict\n", required=False)
+        parser.add_argument("-b", "--brute", help="Use password generator for brute force   USAGE: -b [length passwords / r (random)] E.j: -b 12 ", required=False)
+        parser.add_argument("-t", "--threads", help="Specify the number of threads", required=False)
         args = parser.parse_args()
+
+        # Checkeamos argumentos que estén bien...
+        if not args.wordlist and not args.brute:
+            print(Fore.RED + "[!] ERROR: " + Fore.YELLOW + "Debes introducir un parámetro...\n\t [ --help / -h ] for help")
+            exit(1)
+
+        elif args.brute:
+
+            if args.threads:
+                for num in args.threads:
+                    try:
+                        num = int(num)
+                    except ValueError:
+                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida..." \
+                                                    "\n\tIntroduce un NUMERO...")
+                        exit(1)
+
+                    if num > 501:
+                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida..." \
+                                                    "\n\tIntroduce el numero de hilos a usar entre 20 a 500...")
+                        exit(1)
+                    elif num < 20:
+                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida..." \
+                                                                        "\n\tIntroduce el numero de hilos a usar entre 20 a 500...")
+                        exit(1)
+
+            if args.brute != "r":
+                for num in args.brute:
+                    if num not in string.digits:
+                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida..." \
+                                "\n\tIntroduce el largo de las contraseñas o 'r' para random length")
+                        exit(1)
+
 
         # Somos root?
         am_i_root()

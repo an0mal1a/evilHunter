@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="evilHunter",
-    version="0.1.5",
+    version="0.1.7",
     description="Cracking WiFi(Hanshake)",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -13,7 +13,7 @@ setup(
     url="https://github.com/an0mal1a/evilHunter",
     author_email="pablodiez024@proton.me",
     packages=["words"],
-    scripts=["evilHunter.py"],
+    scripts=["evilHunter.py", "evilCracker.py"],
     install_requires=[
         'colorama'
 ],
