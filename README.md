@@ -39,11 +39,17 @@ Git Hub:
 # REQUERIMENTS:
 
     Esta herramienta requiere de python3 y de el pack
-    de herramientas de 'aircrack-ng'
+    de herramientas de 'aircrack-ng' y ' macchanger
+        -  macchanger
         -  airmon-ng
         -  aircrack-ng
         -  aireplay-ng
         -  airodump-ng
+    
+# Install Tools
+    ┌──(supervisor㉿kali-machine)-[~/ALL_MINE/CRACK_WIFI]
+    └─$ sudo apt-get update -y && sudo apt-get install aircrack-ng -y && sudo apt-get install macchanger -y
+
                
 # DICCIONARIO:
 RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
@@ -68,8 +74,9 @@ RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
         
 
     4. Una véz capturado el handshake, abrimos el archivo .cap y
-        con diccionary attack crackeamos la contraseña.
+        con diccionary attack o generar contraseñas crackeamos la contraseña.
 
 # _Proximas mejoras_
 
                 [♦]  Brute Force (Password Generator) Faster
+                [♦]  Manual Capture handshake (No use extern tools)

