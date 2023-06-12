@@ -55,9 +55,6 @@ def brute_force(progress_bar, file, long):
                                          Fore.LIGHTYELLOW_EX + " Password: " + Fore.LIGHTCYAN_EX + f"{password}"
                                          + Fore.RESET)
 
-            if num == 8000:
-                password = "18AC98B6E9C35FC23BA5"
-
             # Ejecutar aircrack-ng con la contraseña generada
             command = f"aircrack-ng -w - -b E4:AB:89:1F:57:4E {file}"
             process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
