@@ -60,23 +60,24 @@ def exiting(err):
 
     print(
         Fore.WHITE + "\n  ·  ·  ·  · " + Fore.YELLOW + "[*] " +
-                        Fore.LIGHTCYAN_EX + "Restarting network services"
-        + Fore.WHITE + "\n  ·  ·  ·  · " + Fore.YELLOW + "[*] " +
-                    Fore.LIGHTCYAN_EX + "Stopping monitor mode..." + Fore.RESET
+        Fore.LIGHTCYAN_EX + "Restoring mac address..." + Fore.RESET
 
         + Fore.WHITE + "\n  ·  ·  ·  · " + Fore.YELLOW + "[*] " +
-                    Fore.LIGHTCYAN_EX + "Restoring mac address..." + Fore.RESET)
+        Fore.LIGHTCYAN_EX + "Stopping monitor mode..." + Fore.RESET
+
+        + Fore.WHITE + "\n  ·  ·  ·  · " + Fore.YELLOW + "[*] " +
+                        Fore.LIGHTCYAN_EX + "Restarting network services")
 
     try:
         stop_monitoring()
     except NameError:
         pass
+    restore_mac()
 
     print(Fore.WHITE + "  ·  ·  ·  · " + Fore.YELLOW + "[*] " + Fore.LIGHTCYAN_EX + "Deleting some files..."
           + Fore.RESET)
-    restore_mac()
-    restart_net()
     delete_files()
+    restart_net()
 
     print(Fore.YELLOW + "\n[!] " + Fore.GREEN + "Exit Succesfull")
     exit()
@@ -90,11 +91,19 @@ def am_i_root():
 
 
 def change_mac():
-    os.system(f"sudo macchanger -r {choosed_interface} > /dev/null")
+    os.system(f"macchanger -r {choosed_interface} > new_mac.txt")
+    mc = os.system("cat new_mac.txt  | grep 'New' | awk '{print $2}' FS='MAC:' | awk '{print $1}' > espec/mac.txt")
+
+    if mc == 0:
+        mac = open("espec/mac.txt", "r"); mac = mac.read()
+        return mac
+    else:
+        pass
 
 
 def restore_mac():
-    os.system(f"sudo macchanger -p {choosed_interface} > /dev/null")
+    os.system("airmon-ng check kill > /dev/null")
+    os.system(f"macchanger -p {choosed_interface} > /dev/null")
 
 
 def check_utilities():
@@ -136,6 +145,7 @@ def check_utilities():
                 print(Fore.WHITE + "  ·  ·  ·  · " + Fore.YELLOW + "[!] " + Fore.LIGHTCYAN_EX +
                       "La herramienta " + Fore.GREEN + "aircrack-ng" + Fore.LIGHTCYAN_EX +
                       " no está instalada correctamente...")
+                exit(1)
 
 
         elif not non_installed[tool]:
@@ -150,6 +160,7 @@ def check_utilities():
     if tools != 2:
         print(Fore.RED + "\n[!] " + Fore.YELLOW +
               "Es necesario contrar con todas las herramientas para ejecutar el script...")
+        exit(1)
     else:
         print(Fore.YELLOW + "\n[*] " + Fore.BLUE + "Las dependencias están intstaladas... \n")
         time.sleep(1)
@@ -170,8 +181,15 @@ def monitor_mode(choosed_interface):
     except IndexError:
         exiting(err=True)
 
-
-    change_mac()
+    print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.YELLOW +
+          "Cambiando MAC address de " + Fore.LIGHTCYAN_EX + f"{choosed_interface}" + Fore.RESET)
+    mac = change_mac()
+    if mac:
+        print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.YELLOW +
+              "Dirección MAC actual: " + Fore.LIGHTCYAN_EX + f"{mac}.")
+    else:
+        print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.LIGHTYELLOW_EX +
+              "Dirección MAC no modificada correctamente..." + Fore.LIGHTCYAN_EX + f"{mac}.")
 
     os.system("airmon-ng start %s > /dev/null" % choosed_interface)
     os.system("iwconfig {} | grep -Eo 'Mode:([A-Z][a-z]+)' > espec/mode".format(interface))
@@ -183,6 +201,7 @@ def monitor_mode(choosed_interface):
         if mode[0] != "Monitor":
             return 1
         else:
+
             return 0
     except IndexError as err:
         exiting(err)
@@ -238,10 +257,11 @@ def init_start_attack(choosed_interface):
           + Fore.RESET)
 
     if monitor_mode(choosed_interface) == 0:
-        print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.YELLOW +
+        """print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.YELLOW +
               "Interfaz " + Fore.LIGHTCYAN_EX + f"{choosed_interface}" + Fore.YELLOW +
-              " establecida en modo monitor correctamente")
+              " establecida en modo monitor correctamente")"""
         prepared = True
+        pass
     else:
         print(Fore.RED + "\n\t[" + Fore.YELLOW + "V" + Fore.RED + "] " + Fore.YELLOW +
               "La interfaz " + Fore.LIGHTCYAN_EX + f"{choosed_interface}" + Fore.YELLOW +
@@ -249,8 +269,6 @@ def init_start_attack(choosed_interface):
         exiting(err=True)
         prepared = False
 
-    print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.YELLOW +
-          "Cambiando MAC address de " + Fore.LIGHTCYAN_EX + f"{choosed_interface}" + Fore.RESET)
 
     if prepared:
         print(Fore.YELLOW + "\n[*] " + Fore.BLUE + "Prepared to start capturing data...")
@@ -545,8 +563,18 @@ def main():
                                                                         "las contraseñas o 'r' para random length")
                         exit(1)
 
+
         # Somos root?
         am_i_root()
+
+        # Carpetas necesarias
+        if not os.path.exists("captures"):
+            os.makedirs("captures")
+            os.system('chmod 777 captures')
+        if not os.path.exists("espec"):
+            os.makedirs("espec")
+            os.system('chown root:supervisor espec')
+            os.system('chmod 777 espec')
 
         # Tenemos las herraientas?
         check_utilities()
