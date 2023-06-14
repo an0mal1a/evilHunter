@@ -573,7 +573,6 @@ def main():
             os.system('chmod 777 captures')
         if not os.path.exists("espec"):
             os.makedirs("espec")
-            os.system('chown root:supervisor espec')
             os.system('chmod 777 espec')
 
         # Tenemos las herraientas?
