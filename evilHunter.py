@@ -1,6 +1,5 @@
 #!/bin/python3
 
-
 try:
     print("\n[*] Starting...")
     print("\n\t[*] Comprobando librerias...")
@@ -46,13 +45,13 @@ def stop_monitoring():
 
 def exiting(err):
     if err:
-        if err == True:
+        if err is True:
             print(Fore.YELLOW + "\n[*] " + Fore.RED + "Exiting due a error...\n\n" + err)
 
         elif err == "done":
             print(Fore.YELLOW + "\n\n[*] " + Fore.RED + "Exiting tool...")
 
-        elif err == False:
+        elif err is False:
             print(Fore.YELLOW + "\n\n[*] " + Fore.RED + "Exiting, Ctrl + C recived...")
 
     elif not err:
@@ -72,7 +71,10 @@ def exiting(err):
         stop_monitoring()
     except NameError:
         pass
-    restore_mac()
+    try:
+        restore_mac()
+    except NameError:
+        pass
 
     print(Fore.WHITE + "  ·  ·  ·  · " + Fore.YELLOW + "[*] " + Fore.LIGHTCYAN_EX + "Deleting some files..."
           + Fore.RESET)
@@ -146,7 +148,6 @@ def check_utilities():
                       "La herramienta " + Fore.GREEN + "aircrack-ng" + Fore.LIGHTCYAN_EX +
                       " no está instalada correctamente...")
                 exit(1)
-
 
         elif not non_installed[tool]:
             print(Fore.WHITE + "  ·  ·  ·  · " + Fore.YELLOW + "[!] " + Fore.LIGHTCYAN_EX +
@@ -268,7 +269,6 @@ def init_start_attack(choosed_interface):
               " no se ha establecido en modo monitor correctamente...")
         exiting(err=True)
         prepared = False
-
 
     if prepared:
         print(Fore.YELLOW + "\n[*] " + Fore.BLUE + "Prepared to start capturing data...")
@@ -445,7 +445,7 @@ def capture_handshake(direc, args, bssid, ch, file, network_to_attack):
     else:
         print(Fore.RED + "\n\t[T] " + Fore.YELLOW + "Hanshake no capturado...")
         exiting(err=True)
-    crack_handshake(direc, args, file)
+    crack_handshake(direc, args, file, network_to_attack)
 
 
 def find_wordlists(wordlists):
@@ -458,7 +458,7 @@ def find_wordlists(wordlists):
     return wordlists
 
 
-def crack_handshake(direc, args, file):
+def crack_handshake(direc, args, file, network_to_attack):
     # Buscamos arhchivo .cap
     os.system("find {}/{}*.cap > espec/capture_file ".format(direc, file))
 
@@ -472,10 +472,16 @@ def crack_handshake(direc, args, file):
 
     elif args.brute:
         if args.threads:
-            evilCracker.startbrute(file, args.brute, args.threads)
+            fnd = multiprocessing.Process(evilCracker.startbrute(file, args.brute, args.threads, network_to_attack))
+            fnd.start()
         else:
-            evilCracker.startbrute(file, args.brute, 500)
-        exiting(err="done")
+            fnd = multiprocessing.Process(evilCracker.startbrute(file, args.brute, 500, network_to_attack))
+            fnd.start()
+
+        if fnd == 0:
+            exiting(err="done")
+        else:
+            exiting(err=False)
 
     print(Fore.YELLOW + "\n\t[!] " + Fore.LIGHTCYAN_EX + "Abriendo archivo '.cap'\n" + Fore.RESET)
     # input(Fore.LIGHTCYAN_EX + "\n[ENTER] " + Fore.YELLOW + "To continue\n\n" + Fore.RESET)
@@ -506,9 +512,9 @@ def crack_handshake(direc, args, file):
 
         if s.lower() == "s":
             if args.threads:
-                evilCracker.startbrute(file, "r", args.threads)
+                evilCracker.startbrute(file, "r", args.threads, network_to_attack)
             else:
-                evilCracker.startbrute(file, "r", 200)
+                evilCracker.startbrute(file, "r", 200, network_to_attack)
         else:
             exiting(err='done')
 
@@ -524,7 +530,8 @@ def main():
         
         # Argumento de fuerza bruta
         parser.add_argument("-b", "--brute", help="Use password generator for brute force   USAGE: -b "
-                                                  "[length passwords / r (random)] E.j: -b 12 ", required=False)
+                                                  "[length passwords / r (random)] E.j: -b 12 ",
+                            required=False)
         
         # Argumento de hilos
         parser.add_argument("-t", "--threads", help="Specify the number of threads", required=False)
@@ -540,21 +547,17 @@ def main():
         elif args.brute:
 
             if args.threads:
-                for num in args.threads:
-                    try:
-                        num = int(num)
-                    except ValueError:
-                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida...\n\tIntroduce un NUMERO...")
-                        exit(1)
+                try:
+                    num = int(args.threads)
+                except ValueError:
+                    print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida...\n\tIntroduce un NUMERO...")
+                    exit(1)
 
-                    if num > 501:
-                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida...\n\tIntroduce el numero "
-                                                                        "de hilos a usar entre 20 a 500...")
-                        exit(1)
-                    elif num < 20:
-                        print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida...\n\tIntroduce el numero "
-                                                                        "de hilos a usar entre 20 a 500...")
-                        exit(1)
+                if num > 500 or num < 20:
+                    print(num)
+                    print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida...\n\tIntroduce el numero "
+                                                                    "entre 20-500...")
+                    exit(1)
 
             if args.brute != "r":
                 for num in args.brute:
@@ -562,7 +565,6 @@ def main():
                         print(Fore.RED + "[!] " + Fore.LIGHTYELLOW_EX + "Opción inválida...\n\tIntroduce el largo de "
                                                                         "las contraseñas o 'r' para random length")
                         exit(1)
-
 
         # Somos root?
         am_i_root()
@@ -591,9 +593,7 @@ def main():
     except KeyboardInterrupt:
         exiting(err=False)
 
-    # Salida por error
-    except Exception as e:
-        exiting(err=e)
+
 
 
 if __name__ == "__main__":
