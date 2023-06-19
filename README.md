@@ -23,6 +23,9 @@ Argumentos:
 PyPi: (https://pypi.org/project/evilHunter/)
 
     command_line = pip install evilHunter
+                &&
+    ┌──(supervisor㉿kali-machine)-[~/Escritorio]
+    └─$ evilHunter.py 
 
 Git Hub:
 
@@ -32,19 +35,21 @@ Git Hub:
         $ cd evilHunter
         $ chmod 744 evilTrust
         $ sudo python3 setup.py install
-
-
+    
+    ┌──(supervisor㉿kali-machine)-[~/Escritorio]
+    └─$ evilHunter.py 
 
 # REQUERIMENTS:
 
     Esta herramienta requiere de python3 y de el pack
-    de herramientas de 'aircrack-ng' y ' macchanger
+    de herramientas de 'aircrack-ng' y 'macchanger'
 
         -   macchanger
         -   aircrack-ng
         -   airodump-ng
         -   aireplay-ng
         -   airmon-ng
+        
     
 # Install Tools
     ┌──(supervisor㉿kali-machine)-[~/ALL_MINE/CRACK_WIFI]
@@ -63,10 +68,10 @@ RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
 
     2. Escaneamos redes cercanas para guardar información sobre:
 
+                · ESSID/NOMBRE DE RED
                 · Cifrado
                 · BSSID
                 · Canal/Channel
-                · ESSID/NOMBRE DE RED
 
 
     3. A la vez que estamos escaneando esa red fijando la tarjeta de
@@ -74,11 +79,11 @@ RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
         
 
     4. Una véz capturado el handshake, abrimos el archivo .cap y
-        con diccionary attack o generar contraseñas crackeamos la contraseña.
+        con diccionary attack o generando contraseñas lo crackeamos.
 
 # _Proximas mejoras_
 
                 [♦]  Brute Force (Password Generator) more Faster
-                [♦]  Manual Capture handshake (No use extern tools)
+                [♦]  Set a client target to deauth (more posibility of capture handshake)
 
 For suggeriments or problems to fix --> https://github.com/an0mal1a/evilHunter/issues
