@@ -1,5 +1,5 @@
 #!/bin/python3
-import os
+# Crearlo en C
 
 # Funciona
 try:
@@ -52,7 +52,7 @@ def brute_force(progress_bar, file, long, network_to_attack):
     while not password_found.is_set() and not found:
 
         password, num = generate_password(long)
-
+        
         progress_bar.set_description(Fore.LIGHTYELLOW_EX + r"[♦] Attempt: " + Fore.LIGHTCYAN_EX + f"{num}" +
                                      Fore.LIGHTYELLOW_EX + " Password: " + Fore.LIGHTCYAN_EX + f"{password}"
                                      + Fore.RESET)
@@ -66,6 +66,7 @@ def brute_force(progress_bar, file, long, network_to_attack):
         dec_pkts = int(dec_pkts.group(1))
 
         if dec_pkts > 0:
+            time.sleep(3)
             print(Fore.GREEN + "\n\n\t[*] " + Fore.BLUE + "Contraseña encontrada: " + Fore.LIGHTYELLOW_EX + f"{password}\n")
             print(Fore.GREEN + "\n\n\t[+] " + Fore.BLUE + "Decrypted packets: " + Fore.LIGHTYELLOW_EX + f"{dec_pkts}\n")
             found = True
@@ -114,7 +115,6 @@ def main(file, long, threads, network_to_attack):
 
         # Esperamos a todos los hilos detenidos
         concurrent.futures.wait(futures)
-
 
 
 if __name__ == "__main__":

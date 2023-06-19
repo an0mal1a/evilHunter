@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="evilHunter",
-    version="0.1.85",
+    version="0.1.9",
     description="Cracking WiFi(Hanshake)",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -17,9 +17,7 @@ setup(
     install_requires=[
         'colorama',
         'concurrent',
-        'tqdm',
-        'random',
-        're',
+        'tqdm',  
 ],
 
 )

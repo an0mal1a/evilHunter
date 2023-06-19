@@ -24,8 +24,8 @@ except ModuleNotFoundError as e:
     print("[!] Exiting...")
     exit(1)
 
-# tener en cuenta nombres de interfaces diferentes para la funcion
-# Monitor mode
+# modificar la forma de procesar los datos:
+# MAC -> (([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2}))
 
 
 def delete_files():
@@ -39,14 +39,14 @@ def restart_net():
 
 
 def stop_monitoring():
-    if os.system("airmon-ng stop {}mon > /dev/null".format(choosed_interface)) != 0:
-        os.system("airmon-ng stop {} > /dev/null".format(choosed_interface))
+    if os.system("airmon-ng stop {} > /dev/null".format(interface)) != 0:
+        os.system("airmon-ng stop {} > /dev/null".format(interface))
 
 
 def exiting(err):
     if err:
         if err is True:
-            print(Fore.YELLOW + "\n[*] " + Fore.RED + "Exiting due a error...\n\n" + err)
+            print(Fore.YELLOW + "\n[*] " + Fore.RED + "Exiting due a error...\n\n", err)
 
         elif err == "done":
             print(Fore.YELLOW + "\n\n[*] " + Fore.RED + "Exiting tool...")
@@ -68,13 +68,15 @@ def exiting(err):
                         Fore.LIGHTCYAN_EX + "Restarting network services")
 
     try:
-        stop_monitoring()
-    except NameError:
-        pass
-    try:
         restore_mac()
     except NameError:
         pass
+
+    try:
+        stop_monitoring()
+    except NameError:
+        pass
+
 
     print(Fore.WHITE + "  ·  ·  ·  · " + Fore.YELLOW + "[*] " + Fore.LIGHTCYAN_EX + "Deleting some files..."
           + Fore.RESET)
@@ -92,20 +94,33 @@ def am_i_root():
         exit(1)
 
 
-def change_mac():
-    os.system(f"macchanger -r {choosed_interface} > new_mac.txt")
+def change_mac(interface):
+    # Apagamos tarjeta de red:
+    os.system("bash -c 'ifconfig {} down'".format(interface))
+
+    # Modificamos direccion MAC
+    os.system(f"macchanger -r {interface} > new_mac.txt")
     mc = os.system("cat new_mac.txt  | grep 'New' | awk '{print $2}' FS='MAC:' | awk '{print $1}' > espec/mac.txt")
+
+    # Encendemos tarjeta de red
+    os.system(f"bash -c 'ifconfig {interface} up'")
 
     if mc == 0:
         mac = open("espec/mac.txt", "r"); mac = mac.read()
         return mac
     else:
-        pass
+        return None
 
 
 def restore_mac():
+    # Apagamos tarjeta de red:
+    os.system("ifconfig {} down".format(interface))
+
     os.system("airmon-ng check kill > /dev/null")
-    os.system(f"macchanger -p {choosed_interface} > /dev/null")
+    os.system(f"macchanger -p {interface} > /dev/null")
+
+    # Encendemos tarjeta de red
+    os.system('ifconfig {} up'.format(interface))
 
 
 def check_utilities():
@@ -134,6 +149,10 @@ def check_utilities():
         non_installed["airodump-ng"] = False
     else:
         non_installed["airodump-ng"] = True
+    if os.system('command -v airdecap-ng > /dev/null') != 0:
+        non_installed["airdecap-ng"] = False
+    else:
+        non_installed["airdecap-ng"] = True
     if os.system("command -v macchanger > /dev/null") != 0:
         non_installed["macchanger"] = False
     else:
@@ -142,7 +161,7 @@ def check_utilities():
     for tool in non_installed:
         time.sleep(0.4)
 
-        if tool in ["aireplay-ng", "airodump-ng", "airmon-ng"]:
+        if tool in ["aireplay-ng", "airodump-ng", "airmon-ng", "airdecap-ng"]:
             if not non_installed[tool]:
                 print(Fore.WHITE + "  ·  ·  ·  · " + Fore.YELLOW + "[!] " + Fore.LIGHTCYAN_EX +
                       "La herramienta " + Fore.GREEN + "aircrack-ng" + Fore.LIGHTCYAN_EX +
@@ -175,16 +194,21 @@ def kill_conects():
 def monitor_mode(choosed_interface):
     global interface
 
-    try:
-        interface = re.findall("^[a-z]+[0-9]+mon", choosed_interface + "mon")[0]
-    except IndexError:
-        interface = re.findall("^([a-z]+[0-9]+[a-z]+[0-9]+mon)", choosed_interface + "mon")[0]
-    except IndexError:
-        exiting(err=True)
+    # Modo monitor y verificar estado con "iwconfig"
+    os.system("airmon-ng start %s > /dev/null" % choosed_interface)
+
+    # Ver nombre de la interfaz
+    os.system("ifconfig -a | cut -d ' ' -f 1 | xargs | tr ' ' '\n' | tr -d ':' > espec/intif")
+    os.system("cat espec/intif | grep {} > espec/iface".format(choosed_interface))
+
+    with open("espec/iface", "r") as iface:
+        interface = iface.read()
+    interface = interface.replace("\n", "")
 
     print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.YELLOW +
           "Cambiando MAC address de " + Fore.LIGHTCYAN_EX + f"{choosed_interface}" + Fore.RESET)
-    mac = change_mac()
+    mac = change_mac(interface).strip()
+
     if mac:
         print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.YELLOW +
               "Dirección MAC actual: " + Fore.LIGHTCYAN_EX + f"{mac}.")
@@ -192,21 +216,17 @@ def monitor_mode(choosed_interface):
         print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.LIGHTYELLOW_EX +
               "Dirección MAC no modificada correctamente..." + Fore.LIGHTCYAN_EX + f"{mac}.")
 
-    os.system("airmon-ng start %s > /dev/null" % choosed_interface)
-    os.system("iwconfig {} | grep -Eo 'Mode:([A-Z][a-z]+)' > espec/mode".format(interface))
 
+    os.system("iwconfig {} | grep -Eo 'Mode:([A-Z][a-z]+)' | cut -d: -f2 > espec/mode".format(interface))
     with open("espec/mode", "r") as mde:
-        mode = mde.read()
-    mode = re.findall("Mode:([A-Z][a-z]+)", mode)
+        mode = mde.read().strip()
     try:
-        if mode[0] != "Monitor":
+        if mode != "Monitor":
             return 1
         else:
-
             return 0
-    except IndexError as err:
+    except Exception as err:
         exiting(err)
-
 
 def list_save_interf():
     print(Fore.YELLOW + "\n[*] " + Fore.LIGHTCYAN_EX + "Mostrando Intefaces Disponibles...")
@@ -217,9 +237,9 @@ def list_save_interf():
         os.makedirs(direc)
     time.sleep(1)
     # Creamos archivo con interfaces disponibles
-    os.system("ifconfig -a | cut -d ' ' -f 1 | xargs | tr ' ' '\n' | tr -d ':' > espec/iface")
+    os.system("ifconfig -a | cut -d ' ' -f 1 | xargs | tr ' ' '\n' | tr -d ':' > espec/net")
     nums = 0
-    with open("espec/iface", "r") as ifaces:
+    with open("espec/net", "r") as ifaces:
         ifa = ifaces.read()
     ifaces = ifa.split("\n")
 
@@ -258,9 +278,9 @@ def init_start_attack(choosed_interface):
           + Fore.RESET)
 
     if monitor_mode(choosed_interface) == 0:
-        """print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.YELLOW +
+        print(Fore.BLUE + "\n\t[" + Fore.RED + "V" + Fore.BLUE + "] " + Fore.YELLOW +
               "Interfaz " + Fore.LIGHTCYAN_EX + f"{choosed_interface}" + Fore.YELLOW +
-              " establecida en modo monitor correctamente")"""
+              " establecida en modo monitor correctamente")
         prepared = True
         pass
     else:
@@ -370,13 +390,14 @@ def print_process_data(dict, args):
               + Fore.YELLOW + "[+] " + Fore.BLUE + "Channel -> " + Fore.GREEN + "{}".format(dict[network]['channel']) +
               "\t\t" + Fore.YELLOW + "[+] " + Fore.BLUE + "Encryption -> " + Fore.GREEN + "{}".format(
             dict[network]["encription_type"]))
+        print("\n\t", "▄" * 80, "\n")
 
     network_to_attack = None
     while not network_to_attack:
         network_to_attack = input(Fore.YELLOW + "\n[!>] " + Fore.WHITE + "Network to attack (E.j 'MOVISTAR_XXXX'): ")
 
         if network_to_attack not in dict:
-            print(Fore.YELLOW + "\n\t[!] " + Fore.RED + "La red {} no existe..".format(network_to_attack))
+            print(Fore.YELLOW + "\n\t[!] " + Fore.RED + "La red {} no ha sido detectada..".format(network_to_attack))
             network_to_attack = None
         else:
             print(Fore.YELLOW + "\n\t[*] " + Fore.LIGHTCYAN_EX + "Red encontrada!")
@@ -505,8 +526,7 @@ def crack_handshake(direc, args, file, network_to_attack):
             break
 
     if not found:
-        os.system("clear")
-        print(Fore.RED + "\n\n[!] " + Fore.LIGHTYELLOW_EX + "La clave no se ha encontrado...")
+        print(Fore.RED + "\n\n\n\n\n\n\n\n\n\n\n\n[!] " + Fore.LIGHTYELLOW_EX + "La clave no se ha encontrado...")
         print(Fore.LIGHTCYAN_EX + "\n\t[*] " + Fore.LIGHTYELLOW_EX + "Quieres probar un ataque de fuerza bruta? ")
         s = input("\n\t\t[S/N] -> ")
 

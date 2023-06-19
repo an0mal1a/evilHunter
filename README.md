@@ -1,7 +1,6 @@
 # evilHunter
 
 
-
 Argumentos:
     
     OBLIGATORIO
@@ -40,15 +39,16 @@ Git Hub:
 
     Esta herramienta requiere de python3 y de el pack
     de herramientas de 'aircrack-ng' y ' macchanger
-        -  macchanger
-        -  airmon-ng
-        -  aircrack-ng
-        -  aireplay-ng
-        -  airodump-ng
+
+        -   macchanger
+        -   aircrack-ng
+        -   airodump-ng
+        -   aireplay-ng
+        -   airmon-ng
     
 # Install Tools
     ┌──(supervisor㉿kali-machine)-[~/ALL_MINE/CRACK_WIFI]
-    └─$ sudo apt-get update -y && sudo apt-get install aircrack-ng -y && sudo apt-get install macchanger -y
+    └─$ sudo apt-get update -y && sudo apt-get install aircrack-ng -y && sudo apt-get install macchanger -y && sudo apt-get install wpasupplicant
 
                
 # DICCIONARIO:
@@ -70,7 +70,7 @@ RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
 
 
     3. A la vez que estamos escaneando esa red fijando la tarjeta de
-        red en el mismo cana, enviamos paquetes de deautenticación 
+        red en el mismo canal, enviamos paquetes de deautenticación 
         
 
     4. Una véz capturado el handshake, abrimos el archivo .cap y
@@ -78,5 +78,7 @@ RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
 
 # _Proximas mejoras_
 
-                [♦]  Brute Force (Password Generator) Faster
+                [♦]  Brute Force (Password Generator) more Faster
                 [♦]  Manual Capture handshake (No use extern tools)
+
+For suggeriments or problems to fix --> https://github.com/an0mal1a/evilHunter/issues
