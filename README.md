@@ -1,9 +1,13 @@
 # evilHunter
 
+NOVEDADES:
+        
+        ¡Añadido ataque direccionado a cliente!
+        Reorganizado código...
+        Control de errores y reparación de bugs
 
 Argumentos:
-    
-    OBLIGATORIO
+     
         
         [♦] evilHunter [-w /path/to/wordlists] [-b 12 (passwd length)] [-t 400 (Nº of threads)]
         
@@ -22,7 +26,8 @@ Argumentos:
 
 PyPi: (https://pypi.org/project/evilHunter/)
 
-    command_line = pip install evilHunter
+    ┌──(supervisor㉿kali-machine)-[~/Escritorio]
+    └─$ pip install evilHunter
                 &&
     ┌──(supervisor㉿kali-machine)-[~/Escritorio]
     └─$ evilHunter.py 
@@ -83,7 +88,6 @@ RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
 
 # _Proximas mejoras_
 
-                [♦]  Brute Force (Password Generator) more Faster
-                [♦]  Set a client target to deauth (more posibility of capture handshake)
+                [♦]  Brute Force (Password Generator) more Faster 
 
 For suggeriments or problems to fix --> https://github.com/an0mal1a/evilHunter/issues

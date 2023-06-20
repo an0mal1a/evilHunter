@@ -5,8 +5,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="evilHunter",
-    version="0.1.9.15",
-    description="Cracking WiFi(Hanshake)",
+    version="0.1.9.35",
+    description="Cracking WiFi(KCRACK)",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="an0mal1a",
