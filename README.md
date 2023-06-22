@@ -2,9 +2,8 @@
 
 NOVEDADES:
         
-        ¡Añadido ataque direccionado a cliente!
-        Reorganizado código...
-        Control de errores y reparación de bugs
+        ¡Ahora puedes atacar a mas de 1 cliente!
+        Optimización de código
 
 Argumentos:
      
@@ -38,7 +37,7 @@ Git Hub:
     
         $ git clone https://github.com/an0mal1a/evilHunter
         $ cd evilHunter
-        $ chmod 744 evilTrust
+        $ chmod 744 evilHunter
         $ sudo python3 setup.py install
     
     ┌──(supervisor㉿kali-machine)-[~/Escritorio]

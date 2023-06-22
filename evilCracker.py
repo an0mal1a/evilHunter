@@ -15,7 +15,6 @@ try:
     from colorama import Fore
     from concurrent.futures import ThreadPoolExecutor
     from tqdm import tqdm
-    #from evilHunter import exiting
     colorama.init()
 except ModuleNotFoundError as e:
     print("[!] Faltan Modulos...\n", e)
@@ -23,8 +22,6 @@ except ModuleNotFoundError as e:
 tries = 0
 tried = []
 password_found = threading.Event()
-
-# Generar una contraseña aleatoria
 
 
 def generate_password(length):
@@ -67,8 +64,10 @@ def brute_force(progress_bar, file, long, network_to_attack):
 
         if dec_pkts > 0:
             time.sleep(3)
-            print(Fore.GREEN + "\n\n\t[*] " + Fore.BLUE + "Contraseña encontrada: " + Fore.LIGHTYELLOW_EX + f"{password}\n")
-            print(Fore.GREEN + "\n\n\t[+] " + Fore.BLUE + "Decrypted packets: " + Fore.LIGHTYELLOW_EX + f"{dec_pkts}\n")
+            print(Fore.GREEN + "\n\n\t[*] " + Fore.BLUE + "Contraseña encontrada: " +
+                  Fore.LIGHTYELLOW_EX + f"{password}\n")
+            print(Fore.GREEN + "\n\n\t[+] " + Fore.BLUE + "Decrypted packets: " +
+                  Fore.LIGHTYELLOW_EX + f"{dec_pkts}\n")
             found = True
             password_found.set()
 
@@ -120,5 +119,6 @@ def main(file, long, threads, network_to_attack):
 if __name__ == "__main__":
     start = datetime.now()
     print()
-    main(file=input("Enter .cap file --> "), long=input("Enter long --> "), threads=500, network_to_attack=input("SSID Name -> "))
+    main(file=input("Enter .cap file --> "), long=input("Enter long --> "), threads=500,
+         network_to_attack=input("SSID Name -> "))
     print(Fore.YELLOW + "\n\t\t[+] " + Fore.CYAN + "TIME ELAPSED:", datetime.now() - start)

