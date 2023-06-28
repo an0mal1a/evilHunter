@@ -3,7 +3,7 @@
 NOVEDADES:
         
         ¡Ahora puedes atacar a mas de 1 cliente!
-        Optimización de código
+         Correcion de pequeños bugs
 
 Argumentos:
      
@@ -76,6 +76,8 @@ RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
                 · Cifrado
                 · BSSID
                 · Canal/Channel
+                · Clientes
+                · Power ( Señal )
 
 
     3. A la vez que estamos escaneando esa red fijando la tarjeta de

