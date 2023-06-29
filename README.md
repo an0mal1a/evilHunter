@@ -9,39 +9,52 @@ Argumentos:
      
         
         [♦] evilHunter [-w /path/to/wordlists] [-b 12 (passwd length)] [-t 400 (Nº of threads)]
-        
+--- 
+        [♦] Attack Type:
+
             (-w / --wordlist)
-                [♦] -w /path/to/wordlists
+              -w /path/to/wordlists
 
             (-b / --brute)
-                [♦] -b passwd_length
+              -b passwd_length ("r" for rand)
+---
+        [♦] Especification: 
 
             (-t / --threads)
-                [♦] -t Nº_of_threads
+                -t Nº_of_threads
 
             (-h / --help)
-              
+---
+        [♦] Example:
+                                                       ┌── (Path/to/wordlist)
+            Wordlist attack --> sudo evilHunter.py -w /usr/share/wordlists/rockyou.txt
+
+        -------------------------------------------------------------------------------
+                                                              ┌──(500 threads)                                                              
+            Dictionari attack --> sudo evilHunter.py -b r -t 500
+                                                        └─(random length)
+
+
 # INSTALACIÓN:
 
 PyPi: (https://pypi.org/project/evilHunter/)
 
-    ┌──(supervisor㉿kali-machine)-[~/Escritorio]
-    └─$ pip install evilHunter
-                &&
-    ┌──(supervisor㉿kali-machine)-[~/Escritorio]
-    └─$ evilHunter.py 
+    1.┌──(supervisor㉿kali-machine)-[~/Escritorio]
+      └─$ pip install evilHunter
+                
+    2.┌──(supervisor㉿kali-machine)-[~/Escritorio]
+      └─$ evilHunter.py 
 
 Git Hub:
+ 
+    
+        git clone https://github.com/an0mal1a/evilHunter
+        cd evilHunter
+        chmod 744 evilHunter.py 
+        sudo python3 setup.py install 
 
-    Command Lines:
-    
-        $ git clone https://github.com/an0mal1a/evilHunter
-        $ cd evilHunter
-        $ chmod 744 evilHunter
-        $ sudo python3 setup.py install
-    
-    ┌──(supervisor㉿kali-machine)-[~/Escritorio]
-    └─$ evilHunter.py 
+    ┌──(supervisor㉿kali-machine)-[~]
+    └─$ evilHunter.py -h 
 
 # REQUERIMENTS:
 
@@ -56,13 +69,12 @@ Git Hub:
         
     
 # Install Tools
+
     ┌──(supervisor㉿kali-machine)-[~/ALL_MINE/CRACK_WIFI]
     └─$ sudo apt-get update -y && sudo apt-get install aircrack-ng -y && sudo apt-get install macchanger -y && sudo apt-get install wpasupplicant
-
-               
+ 
 # DICCIONARIO:
 RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
-
 
 # Procedimiento:
 
@@ -89,6 +101,6 @@ RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
 
 # _Proximas mejoras_
 
-                [♦]  Brute Force (Password Generator) more Faster 
+                [♦]  Brute Force (Password Generator) more Faster (change to C)
 
 For suggeriments or problems to fix --> https://github.com/an0mal1a/evilHunter/issues
