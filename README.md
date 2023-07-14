@@ -2,8 +2,9 @@
 
 NOVEDADES:
         
+        ¡Fuerza Brute en C!
         ¡Ahora puedes atacar a mas de 1 cliente!
-         Correcion de pequeños bugs
+
 
 Argumentos:
      
@@ -34,10 +35,37 @@ Argumentos:
             Dictionari attack --> sudo evilHunter.py -b r -t 500
                                                         └─(random length)
 
+---
+
+
 
 # INSTALACIÓN:
 
-PyPi: (https://pypi.org/project/evilHunter/)
+Git Hub: (v0.2a)
+    
+        FOR USE THE BRUTE FORCE 'C' INSTALL THE SETUP.PY FILE, 
+             ¡DONT RUN IT DIRECTLY FROM THE DIR CLONED! 
+        
+     [!] ONE LINER: 
+     
+           git clone https://github.com/an0mal1a/evilHunter && chmod -R 744 evilHunter && cd evilHunter && sudo python3 setup.py install
+
+
+     [!] COMMANDS
+
+            1. git clone https://github.com/an0mal1a/evilHunter
+            2. chmod -R 744 evilHunter
+            3. cd evilHunter 
+            5. sudo python3 setup.py install
+
+    [*] END:
+
+        ┌──(supervisor㉿kali-machine)-[~]
+        └─$ evilHunter.py -h 
+    
+    
+
+PyPi: (https://pypi.org/project/evilHunter/)   
 
     1.┌──(supervisor㉿kali-machine)-[~/Escritorio]
       └─$ pip install evilHunter
@@ -45,16 +73,6 @@ PyPi: (https://pypi.org/project/evilHunter/)
     2.┌──(supervisor㉿kali-machine)-[~/Escritorio]
       └─$ evilHunter.py 
 
-Git Hub:
- 
-    
-        git clone https://github.com/an0mal1a/evilHunter
-        cd evilHunter
-        chmod 744 evilHunter.py 
-        sudo python3 setup.py install 
-
-    ┌──(supervisor㉿kali-machine)-[~]
-    └─$ evilHunter.py -h 
 
 # REQUERIMENTS:
 
@@ -99,8 +117,5 @@ RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
     4. Una véz capturado el handshake, abrimos el archivo .cap y
         con diccionary attack o generando contraseñas lo crackeamos.
 
-# _Proximas mejoras_
-
-                [♦]  Brute Force (Password Generator) more Faster (change to C)
 
 For suggeriments or problems to fix --> https://github.com/an0mal1a/evilHunter/issues

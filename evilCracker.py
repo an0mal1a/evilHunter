@@ -26,9 +26,9 @@ password_found = threading.Event()
 
 def generate_password(length):
     global tries
-    long = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    length_options = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     if length == "r":
-        length = random.choice(long)
+        length = random.choice(length_options)
 
     characters = string.ascii_letters + string.digits
     password = ''.join(random.choice(characters) for _ in range(length))
@@ -41,15 +41,14 @@ def generate_password(length):
     return password, tries
 
 
-def brute_force(progress_bar, file, long, network_to_attack):
+def brute_force(progress_bar, file, length, network_to_attack):
     global found
     found = False
-# not found and
     # Intentar descifrar el handshake con diferentes contraseñas generadas
     while not password_found.is_set() and not found:
 
-        password, num = generate_password(long)
-        
+        password, num = generate_password(length)
+
         progress_bar.set_description(Fore.LIGHTYELLOW_EX + r"[♦] Attempt: " + Fore.LIGHTCYAN_EX + f"{num}" +
                                      Fore.LIGHTYELLOW_EX + " Password: " + Fore.LIGHTCYAN_EX + f"{password}"
                                      + Fore.RESET)
@@ -78,15 +77,13 @@ def startbrute(file, length, threads, network_to_attack):
     print(Fore.YELLOW + "\n\t\t[+] " + Fore.CYAN + "TIME ELAPSED:", datetime.now() - start_time)
 
 
-def main(file, long, threads, network_to_attack):
+def main(file, length, threads, network_to_attack):
 
     try:
-        print(Fore.YELLOW + "\n[*] " + Fore.BLUE + "Starting brute force...\n" + Fore.RESET)
+        print(Fore.YELLOW + "\n[*] " + Fore.BLUE + "Starting brute force module ...\n" + Fore.RESET)
         time.sleep(0.5)
-        print(Fore.YELLOW + "\n\t[+] " + Fore.BLUE + "Preparing threads...\n" + Fore.RESET)
-        time.sleep(0.5)
-        print(Fore.YELLOW + "\n[*] " + Fore.GREEN + "DONE! Starting...\n" + Fore.RESET)
-        time.sleep(0.5)
+        print(Fore.YELLOW + "\n\t[+] " + Fore.BLUE + "Preparing threads & starting...\n" + Fore.RESET)
+        time.sleep(0.5) 
         threads = int(threads)
 
         with ThreadPoolExecutor(max_workers=threads) as executor:
@@ -95,7 +92,7 @@ def main(file, long, threads, network_to_attack):
             progress_bar = tqdm(total=0)
 
             for i in range(threads):
-                future = executor.submit(brute_force, progress_bar, file, long, network_to_attack)
+                future = executor.submit(brute_force, progress_bar, file, length, network_to_attack)
                 future.deamon = True
                 futures.append(future)
 
@@ -119,6 +116,6 @@ def main(file, long, threads, network_to_attack):
 if __name__ == "__main__":
     start = datetime.now()
     print()
-    main(file=input("Enter .cap file --> "), long=input("Enter long --> "), threads=500,
+    main(file=input("Enter .cap file --> "), length=input("Enter length --> "), threads=500,
          network_to_attack=input("SSID Name -> "))
     print(Fore.YELLOW + "\n\t\t[+] " + Fore.CYAN + "TIME ELAPSED:", datetime.now() - start)
