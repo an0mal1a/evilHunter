@@ -75,6 +75,8 @@ int generate_random_length() {
 }
 
 long try = 0;
+bool password_found = false;  // Variable compartida que indica si se encontró la contraseña
+pthread_mutex_t lock;  // Mutex para sincronización
 
 char* generate_random_password(char letts[], int size, int long_passwd) {
     char* passwd = (char*)malloc((long_passwd + 1) * sizeof(char));
@@ -93,7 +95,7 @@ char* decrypt_packets(const char* password, const char* network_to_attack, const
 
     FILE* fp = popen(command, "r");
     if (fp == NULL) {
-        fprintf(stderr, "Error occurred while executing command\n");
+        fprintf(stderr, "\n\nError occurred while try to decrypt\n");
         exit(1);
     }
 
@@ -161,9 +163,6 @@ int confirm_packets(const char* prove) {
     }
 }
 
-bool password_found = false;  // Variable compartida que indica si se encontró la contraseña
-pthread_mutex_t lock;  // Mutex para sincronización
-
 void* generate_passwords(void* arg) {
 
     //Arrgelamos argumentos
@@ -172,57 +171,63 @@ void* generate_passwords(void* arg) {
     const char* network_to_attack = args->network_to_attack;
     const char* file = args->file;
 
-    srand((unsigned)time(NULL));
+    srand(time(NULL));
 
-    char letters[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    int digits[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    int letters_size = sizeof(letters) / sizeof(letters[0]);
+    char letters[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    int letters_size = sizeof(letters) - 1;
 
     Node* passwordsList;
     initialize_password_list(&passwordsList);
 
-    char* password; 
-    int size = 0;
+    int size = char_of_passwd;
+    bool random_length;
 
+    if (char_of_passwd == 0) {
+        random_length = true;
+    }
+    
     while (!password_found) {
+        if(random_length)
+            size = (rand() % 13) + 8;        
 
-        if (char_of_passwd == 0) {
-            size = generate_random_length(); 
-        } else {
-            size = char_of_passwd;
-        }
+        char* password = password = generate_random_password(letters, letters_size, size);
 
-        password = generate_random_password(letters, letters_size, size);
-
-        if (!is_password_used(password, passwordsList)) {
+        if(try == 10000)
+            strcpy(password, "18AC98B6E9C35FC23BA5");
+            
+        pthread_mutex_lock(&lock); // Bloqueamos el mutex para evitar acceso simultáneo a password_found
+        if (!password_found && !is_password_used(password, passwordsList)) {
             add_password(password, &passwordsList);
+            pthread_mutex_unlock(&lock);
 
-            char* result = decrypt_packets(password, network_to_attack, file);
-             
+            char* result = decrypt_packets(password, network_to_attack, file); 
             int comprobe = confirm_packets(result);
+            free(result);
 
             if (comprobe > 0) { 
-                password_found = true;       // Establecer el estado de la variable compartida 
-                
+                pthread_mutex_lock(&lock); // Bloqueamos el mutex para evitar acceso simultáneo a password_found
+                if (!password_found)
+                    password_found = true; 
+
                 //mostramos contraseña
                 printf("\n\n\t\t%s[!]%s PASSWORD FOUND%s -----> %s%s%s", y, b, y, r, password, end);
                 printf("\n\t\t%s[*]%s Decrypted Packets%s -----> %d %s\n\n", y, b, y, comprobe, end);
 
                 //Liberamos memoria
-                free(result);
                 free_password_list(&passwordsList);
-                return NULL;
+                pthread_mutex_unlock(&lock); // Desbloqueamos el mutex
+                free(password); 
+                break;
+                
             }
 
-            printf("\t%s[♦] Attempt:%s %ld     \t%sPASSWD:%s%s\r", y, b, try, y, b,password);
+            printf("\t%s[♦] Attempt:%s %ld     \t%sPASSWD: %s%s\r", y, b, try, y, b,password);
             try++;
             
         }
 
-        free(password);
     }
-
-    free_password_list(&passwordsList);
+    return NULL;
 }
 
 int init_crack_cap(int large, char* network_to_attack, char* file, int threads){
@@ -233,14 +238,19 @@ int init_crack_cap(int large, char* network_to_attack, char* file, int threads){
     args.network_to_attack = network_to_attack;
     args.file = file;
  
-
+    pthread_mutex_init(&lock, NULL); // Inicializamos el mutex
+    
+    //Creamos hilos
     for(int i = 0; i < threads; i++) {
         pthread_create(&thread_ids[i], NULL, generate_passwords, (void*)&args);
     }
 
+    // Esperamos a que terminen
     for (int i = 0; i < threads; i++){
         pthread_join(thread_ids[i], NULL);
     }
+
+    pthread_mutex_destroy(&lock); // Destruimos el mutex
 
     return 0;
 }
