@@ -105,7 +105,7 @@ char* decrypt_packets(const char* password, const char* network_to_attack, const
         fgets(buffer, sizeof(buffer), fp);
     }
 
-    char* output = (char*)malloc(100 * sizeof(char));
+    char* outp ut = (char*)malloc(100 * sizeof(char));
     fgets(output, 100, fp);
 
     pclose(fp);  
@@ -191,9 +191,6 @@ void* generate_passwords(void* arg) {
             size = (rand() % 13) + 8;        
 
         char* password = password = generate_random_password(letters, letters_size, size);
-
-        if(try == 10000)
-            strcpy(password, "18AC98B6E9C35FC23BA5");
             
         pthread_mutex_lock(&lock); // Bloqueamos el mutex para evitar acceso simultáneo a password_found
         if (!password_found && !is_password_used(password, passwordsList)) {

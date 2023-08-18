@@ -56,7 +56,19 @@ Git Hub: (v0.2a)
             1. git clone https://github.com/an0mal1a/evilHunter
             2. chmod -R 744 evilHunter
             3. cd evilHunter 
-            5. sudo python3 setup.py install
+            4. sudo pip install .
+    
+    [!] ERROR:
+
+        Si usas el comando sudo python3 setup.py install te da este error:
+    
+             pkg_resources.extern.packaging.version.InvalidVersion: Invalid version: '1.14.0-unknown'
+        
+        Ejecuta este comado:
+
+              ┌──(supervisor<  ㉿kali-machine)-[~]
+              └─$ sudo pip install .
+    
 
     [*] END:
 
@@ -86,7 +98,7 @@ PyPi: (https://pypi.org/project/evilHunter/)
         -   airmon-ng
         
     
-# Install Tools
+# Install all dependencies
 
     ┌──(supervisor㉿kali-machine)-[~/ALL_MINE/CRACK_WIFI]
     └─$ sudo apt-get update -y && sudo apt-get install aircrack-ng -y && sudo apt-get install macchanger -y && sudo apt-get install wpasupplicant

@@ -52,6 +52,7 @@ def stop_monitoring():
 
 
 def exiting(err):
+    os.system("tput cnorm")
     # Salida con o sin error
     if err:
         if err == "done":
@@ -754,24 +755,39 @@ def startbrute_c(network_to_attack, file, large, threads):
 
         #so_file_path = os.path.join(os.path.dirname(script_path), "archivo.so")
         if not os.path.isfile("/usr/local/bin/evilCrackerc.so"):
-            os.system("gcc -shared -o /usr/local/bin/evilCrackerc.so -fPIC -pthread /usr/local/bin/evilCracker.c")
+            os.system("gcc -shared -o /usr/local/bin/evilCrackerc.so -fPIC -pthread $(whereis evilCracker.c | awk '{print $2}')")
 
         print(Fore.YELLOW + "[>] " + Fore.LIGHTCYAN_EX + "Starting brute force C module...\n\n" + Fore.RESET) 
         network_to_attack = network_to_attack.encode()
-        file = file.encode() 
+        file = file.encode()
  
         # Cargar la biblioteca compartida
         #lib = ctypes.CDLL(f"{directory}/C/evilCracker_c.so")
         lib = ctypes.CDLL("/usr/local/bin/evilCrackerc.so")
 
+
+
         # Especificar el tipo de retorno y los argumentos de la función init_crack_cap
         lib.init_crack_cap.restype = None
         lib.init_crack_cap.argtypes = (ctypes.c_int, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int)
 
-        # Llamar a la función init_crack_cap
-        result = lib.init_crack_cap(int(large), network_to_attack, file)
+        def run_crack():
+            nonlocal lib
+            lib.init_crack_cap(int(large), network_to_attack, file, int(threads))
+
+        # Crear un hilo para ejecutar el proceso de cracking
+        crack_thread = threading.Thread(target=run_crack)
+
+        # Iniciar el hilo de cracking
+        crack_thread.start()
+
+        # Esperar a que el hilo de cracking termine
+        crack_thread.join()
+
     except KeyboardInterrupt:
+
         ctypes.cdll.unload(lib._handle)
+
         exiting(err=False)
 
 
