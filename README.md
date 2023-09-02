@@ -37,6 +37,10 @@ Argumentos:
 
 ---
 
+# Install all dependencies
+
+    ┌──(supervisor㉿kali-machine)-[~/ALL_MINE/CRACK_WIFI]
+    └─$ sudo apt-get update -y && sudo apt-get install aircrack-ng -y && sudo apt-get install macchanger -y && sudo apt-get install wpasupplicant
 
 
 # INSTALACIÓN:
@@ -98,10 +102,7 @@ PyPi: (https://pypi.org/project/evilHunter/)
         -   airmon-ng
         
     
-# Install all dependencies
 
-    ┌──(supervisor㉿kali-machine)-[~/ALL_MINE/CRACK_WIFI]
-    └─$ sudo apt-get update -y && sudo apt-get install aircrack-ng -y && sudo apt-get install macchanger -y && sudo apt-get install wpasupplicant
  
 # DICCIONARIO:
 RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)
