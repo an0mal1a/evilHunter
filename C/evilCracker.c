@@ -105,7 +105,7 @@ char* decrypt_packets(const char* password, const char* network_to_attack, const
         fgets(buffer, sizeof(buffer), fp);
     }
 
-    char* outp ut = (char*)malloc(100 * sizeof(char));
+    char* output = (char*)malloc(100 * sizeof(char));
     fgets(output, 100, fp);
 
     pclose(fp);  
