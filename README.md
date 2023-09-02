@@ -37,15 +37,11 @@ Argumentos:
 
 ---
 
-# Install all dependencies
-
-    ┌──(supervisor㉿kali-machine)-[~/ALL_MINE/CRACK_WIFI]
-    └─$ sudo apt-get update -y && sudo apt-get install aircrack-ng -y && sudo apt-get install macchanger -y && sudo apt-get install wpasupplicant
 
 
 # INSTALACIÓN:
 
-Git Hub: (v0.2a)
+Git Hub: (v0.2.18)
     
         FOR USE THE BRUTE FORCE 'C' INSTALL THE SETUP.PY FILE, 
              ¡DONT RUN IT DIRECTLY FROM THE DIR CLONED! 
@@ -102,7 +98,10 @@ PyPi: (https://pypi.org/project/evilHunter/)
         -   airmon-ng
         
     
+# Install all dependencies
 
+    ┌──(supervisor㉿kali-machine)-[~/ALL_MINE/CRACK_WIFI]
+    └─$ sudo apt-get update -y && sudo apt-get install aircrack-ng -y && sudo apt-get install macchanger -y && sudo apt-get install wpasupplicant
  
 # DICCIONARIO:
 RockYou install -> (https://github.com/an0mal1a/evilHunter/releases/tag/RockYou)

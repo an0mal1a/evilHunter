@@ -32,7 +32,6 @@ except ModuleNotFoundError as e:
 # solamente queda arrgelar lo del .so
 #
 
-
 def delete_files():
     # Borramos archivos innnecesarios
     os.system('find /root/EvilHunter_Data/captures -type f ! -name "*.cap" -delete > /dev/null')
@@ -613,7 +612,13 @@ def print_clients(net_clients, bssid):
         client = clients_of_net[client_num]
         print("\t" + Fore.RED + f"{client_num} ---> " + Fore.WHITE + f"{client}\n")
 
-    return select_client(clients_of_net)
+    print("\t" + Fore.RED + f"'-' ---> " + Fore.WHITE + f"BroadCast\n")
+
+    clients = select_client(clients_of_net)
+    if clients == "broadcast":
+        return None
+    else:
+        return clients
 
 
 def select_client(clients):
@@ -626,7 +631,11 @@ def select_client(clients):
         num_client = input(Fore.YELLOW + "\n[!>] " + Fore.WHITE + "Client or clients to attack (E.j '1'): ")
         num_clients = num_client.replace(" ", "").split(",")
 
-        if len(num_clients) > 1:
+        if num_clients == '-':
+            clients_to_do_attack = "broadcast"
+            break
+
+        elif len(num_clients) > 1:
             for client in num_clients:
                 if clients_to_do_attack == 0:
                     break
@@ -650,8 +659,11 @@ def verify_clients(client, clients, clients_to_attack):
     try:
         client = int(client)
     except ValueError:
-        print(Fore.YELLOW + "\n\t[!] " + Fore.RED + "Carácter invalido... ['{}']".format(client))
-        client = None
+        if client == "-":
+            return "broadcast"
+        else:
+            print(Fore.YELLOW + "\n\t[!] " + Fore.RED + "Carácter invalido... ['{}']".format(client))
+            client = None
 
     # Si no existe el numero de cliente, seguimos preguntando
     if client not in clients:
@@ -762,10 +774,7 @@ def startbrute_c(network_to_attack, file, large, threads):
         file = file.encode()
  
         # Cargar la biblioteca compartida
-        #lib = ctypes.CDLL(f"{directory}/C/evilCracker_c.so")
         lib = ctypes.CDLL("/usr/local/bin/evilCrackerc.so")
-
-
 
         # Especificar el tipo de retorno y los argumentos de la función init_crack_cap
         lib.init_crack_cap.restype = None
@@ -819,10 +828,10 @@ def crack_handshake(direc, args, file, network_to_attack):
                 fnd.start()
         else:
             try:
-                fnd = multiprocessing.Process(init_brute_c(network_to_attack, file, args.brute, 500))
+                fnd = multiprocessing.Process(init_brute_c(network_to_attack, file, args.brute, 20))
                 fnd.start()
             except Exception:
-                fnd = multiprocessing.Process(evilCracker.startbrute(file, args.brute, 500, network_to_attack))
+                fnd = multiprocessing.Process(evilCracker.startbrute(file, args.brute, 20, network_to_attack))
                 fnd.start()
  
         exiting(err="done") 
